@@ -1,0 +1,14 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+package harvester;
+
+service Harvester {
+  rpc Ping (PingReq) returns (PingRes);
+}
+
+message PingReq {}
+
+message PingRes {
+  string message = 1;
+}
