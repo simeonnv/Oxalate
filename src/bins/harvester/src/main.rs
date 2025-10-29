@@ -1,3 +1,7 @@
+use std::net::SocketAddr;
+
+use env_logger::Env;
+use log::info;
 use tonic::{Request, Response, Status, transport::Server};
 pub mod harvester {
 
@@ -9,7 +13,10 @@ pub mod harvester {
 pub use harvester::harvester_server::Harvester;
 pub use harvester::{PingReq, PingRes};
 
+use crate::env::ENVVARS;
 use crate::harvester::harvester_server::HarvesterServer;
+
+pub mod env;
 
 #[derive(Default)]
 pub struct HarvesterService {}
@@ -27,10 +34,13 @@ impl Harvester for HarvesterService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:50051".parse().unwrap();
+    let _ = ENVVARS.rust_log;
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    let addr = SocketAddr::new(ENVVARS.harvester_address, ENVVARS.harvester_port);
+
     let harvester_server = HarvesterService::default();
 
-    println!("HealthServer + GreeterServer listening on {addr}");
+    info!("Listening on {addr}");
 
     let reflector = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(harvester::FILE_DESCRIPTOR_SET)
