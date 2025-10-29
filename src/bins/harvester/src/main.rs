@@ -2,9 +2,7 @@ use std::net::SocketAddr;
 
 use env_logger::Env;
 use log::info;
-use tonic::{Request, Response, Status, transport::Server};
 pub mod harvester {
-
     tonic::include_proto!("harvester");
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
         tonic::include_file_descriptor_set!("harvester_descriptor");
@@ -12,25 +10,15 @@ pub mod harvester {
 
 pub use harvester::harvester_server::Harvester;
 pub use harvester::{PingReq, PingRes};
+use tonic::transport::Server;
 
 use crate::env::ENVVARS;
 use crate::harvester::harvester_server::HarvesterServer;
+use crate::proccesses::HarvesterService;
 
 pub mod env;
 
-#[derive(Default)]
-pub struct HarvesterService {}
-
-#[tonic::async_trait]
-impl Harvester for HarvesterService {
-    async fn ping(&self, req: Request<PingReq>) -> Result<Response<PingRes>, Status> {
-        println!("Got a request from {:?}", req.remote_addr());
-        let reply = PingRes {
-            message: format!("pong"),
-        };
-        Ok(Response::new(reply))
-    }
-}
+pub mod proccesses;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
