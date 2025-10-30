@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
 use env_logger::Env;
-use log::info;
 pub mod harvester {
     tonic::include_proto!("harvester");
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
@@ -10,6 +9,7 @@ pub mod harvester {
 
 pub use harvester::harvester_server::Harvester;
 pub use harvester::{PingReq, PingRes};
+use log::info;
 use tonic::transport::Server;
 
 use crate::env::ENVVARS;

@@ -1,8 +1,11 @@
 [workspace]
-members = ["src/bins/harvester"]
+members = ["src/bins/harvester", "src/bins/outlet", "src/libs/keylogger"]
 
 
 [workspace.dependencies]
+# oxalate_harvester = { path = "src/bins/harvester" }
+oxalate_keylogger = { path = "src/libs/keylogger" }
+
 tonic = { version = "0.14.2", features = ["server"] }
 tokio = { version = "1.48", features = ["full"] }
 tonic-reflection = "0.14"
@@ -17,3 +20,6 @@ dotenv = "0.15"
 # logging
 log = { version = "0.4.28" }
 env_logger = { version = "0.11.8" }
+
+# Error
+thiserror = { version = "1.0.69" }
