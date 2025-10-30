@@ -1,0 +1,9 @@
+[package]
+name = "oxalate_keylogger"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+thiserror = { workspace = true }
+rdev = "0.5.3"
