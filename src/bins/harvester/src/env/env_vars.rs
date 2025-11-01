@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use std::{net::IpAddr, path::PathBuf};
 
 use envconfig::Envconfig;
 use lazy_static::lazy_static;
@@ -10,11 +10,20 @@ pub struct EnvVars {
     #[envconfig(from = "RUST_LOG")]
     pub rust_log: String,
 
-    #[envconfig(from = "HARVESTER_ADDRESS")]
-    pub harvester_address: IpAddr,
+    #[envconfig(from = "PUBLIC_HARVESTER_ADDRESS", default = "0.0.0.0")]
+    pub public_harvester_address: IpAddr,
 
-    #[envconfig(from = "HARVESTER_PORT", default = "6767")]
-    pub harvester_port: u16,
+    #[envconfig(from = "PUBLIC_HARVESTER_PORT", default = "6767")]
+    pub public_harvester_port: u16,
+
+    #[envconfig(from = "PRIVATE_HARVESTER_ADDRESS", default = "127.0.0.1")]
+    pub private_harvester_address: IpAddr,
+
+    #[envconfig(from = "PRIVATE_HARVESTER_PORT", default = "6969")]
+    pub private_harvester_port: u16,
+
+    #[envconfig(from = "HARVESTER_KV_DB_PATH", default = "./db")]
+    pub harvester_kv_db_path: PathBuf,
 
     #[envconfig(from = "POSTGRES_NAME")]
     pub postgres_name: String,
