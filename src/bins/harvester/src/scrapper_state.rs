@@ -63,9 +63,11 @@ impl ScrapperState {
     }
 
     pub fn reset(&mut self) -> Result<(), Error> {
-        self.enabled = false;
-        self.scanned_addr_counter = 0.into();
-        self.connected_devices = 0.into();
+        *self = Self {
+            enabled: false,
+            scanned_addr_counter: 0.into(),
+            connected_devices: 0.into(),
+        };
         self.save_state()?;
         Ok(())
     }

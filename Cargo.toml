@@ -22,6 +22,7 @@ tonic-prost = "0.14.0"
 envconfig = "0.11.0"
 lazy_static = "1.5"
 dotenv = "0.15"
+chrono = { version = "0.4.42", features = ["serde"] }
 
 # logging
 log = { version = "0.4.28" }
@@ -29,3 +30,12 @@ env_logger = { version = "0.11.8" }
 
 # Error
 thiserror = { version = "2.0.17" }
+
+# Storage
+sqlx = { version = "0.8", features = [
+    "runtime-tokio",
+    "postgres",
+    "sqlite",
+    "chrono",
+    "uuid",
+] }
