@@ -8,3 +8,4 @@ oxalate_keylogger = { workspace = true }
 tonic = { workspace = true }
 tokio = { workspace = true }
 oxalate_proxy = { workspace = true }
+machine-uid = "0.5.4"

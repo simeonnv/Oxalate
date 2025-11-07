@@ -42,3 +42,10 @@ impl From<sqlx::Error> for Error {
         Self::Internal(err.to_string())
     }
 }
+
+impl From<tokio::task::JoinError> for Error {
+    fn from(err: tokio::task::JoinError) -> Self {
+        error!("thread join error: {err}");
+        Self::Internal(err.to_string())
+    }
+}
