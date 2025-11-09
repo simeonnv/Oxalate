@@ -3,7 +3,7 @@ use axum::{extract::State, http::HeaderMap};
 use uuid::Uuid;
 
 #[utoipa::path(
-    post,
+    get,
     path = "/info/uptime",
     description = "devices will ping this endpoint for health/uptime monitoring",
     params(
