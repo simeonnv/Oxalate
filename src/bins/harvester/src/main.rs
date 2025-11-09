@@ -2,7 +2,7 @@ use axum::Router;
 use env_logger::Env;
 use log::info;
 use sqlx::{Pool, Postgres};
-use std::{future::pending, net::SocketAddr};
+use std::{future::pending, net::SocketAddr, sync::Arc};
 
 use crate::env::ENVVARS;
 
@@ -28,6 +28,7 @@ pub use create_postgres_pool::create_postgres_pool;
 #[derive(Clone)]
 pub struct AppState {
     db_pool: Pool<Postgres>,
+    scrapper_state: Arc<ScrapperState>,
 }
 
 #[tokio::main]
@@ -44,7 +45,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let app_state = AppState { db_pool };
+    let scrapper_state = Arc::new(ScrapperState::load()?);
+    let app_state = AppState {
+        db_pool,
+        scrapper_state,
+    };
 
     let public_addr = SocketAddr::new(
         ENVVARS.public_harvester_address,

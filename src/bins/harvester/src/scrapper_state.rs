@@ -8,26 +8,27 @@ use thiserror::Error;
 use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
 
-const MAIN_STATE_KEY: &[u8; 10] = b"Main State";
+const SCRAPPER_STATE_KEY: &[u8; 14] = b"scrapper state";
+
+#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+pub enum Stage {
+    #[default]
+    GlobalScan,
+}
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ScrapperState {
     pub enabled: bool,
-    pub scanned_addr_counter: AtomicU32,
-    pub connected_devices: AtomicU16,
+    pub current_stage: Stage,
 }
 
 impl ScrapperState {
     pub fn load() -> Result<Self, Error> {
-        let scrapper_state = DB.get(MAIN_STATE_KEY)?;
+        let scrapper_state = DB.get(SCRAPPER_STATE_KEY)?;
         let scrapper_state = match scrapper_state {
             Some(e) => e,
             None => {
-                let scrapper_state = Self {
-                    enabled: false,
-                    scanned_addr_counter: 0.into(),
-                    connected_devices: 0.into(),
-                };
+                let scrapper_state = Self::default();
                 Self::save_state(&scrapper_state)?;
                 scrapper_state
             }
@@ -36,7 +37,7 @@ impl ScrapperState {
     }
 
     pub fn save_state(&self) -> Result<(), Error> {
-        DB.insert(MAIN_STATE_KEY, self)?;
+        DB.insert(SCRAPPER_STATE_KEY, self)?;
         DB.flush()?;
         Ok(())
     }
@@ -45,28 +46,27 @@ impl ScrapperState {
         self.enabled = true
     }
 
-    pub fn req_addresses(&mut self) -> Option<Ipv4Range> {
-        if !self.enabled {
-            return None;
-        }
-        let old = self.scanned_addr_counter.fetch_add(256, Ordering::Relaxed);
-        if old > u32::MAX.wrapping_sub(255) {
-            self.enabled = false;
-            let _ = self.save_state();
-            return None;
-        }
+    // pub fn req_addresses(&mut self) -> Option<Ipv4Range> {
+    //     if !self.enabled {
+    //         return None;
+    //     }
+    //     let old = self.scanned_addr_counter.fetch_add(256, Ordering::Relaxed);
+    //     if old > u32::MAX.wrapping_sub(255) {
+    //         self.enabled = false;
+    //         let _ = self.save_state();
+    //         return None;
+    //     }
 
-        Some(Ipv4Range {
-            current: old,
-            end: old.wrapping_add(255),
-        })
-    }
+    //     Some(Ipv4Range {
+    //         current: old,
+    //         end: old.wrapping_add(255),
+    //     })
+    // }
 
     pub fn reset(&mut self) -> Result<(), Error> {
         *self = Self {
             enabled: false,
-            scanned_addr_counter: 0.into(),
-            connected_devices: 0.into(),
+            current_stage: self.current_stage,
         };
         self.save_state()?;
         Ok(())
@@ -77,32 +77,4 @@ impl ScrapperState {
 pub enum Error {
     #[error("kv error -> {0}")]
     KvError(#[from] KvError),
-}
-
-#[derive(Clone, Debug)]
-pub struct Ipv4Range {
-    pub current: u32,
-    pub end: u32,
-}
-
-impl Iterator for Ipv4Range {
-    type Item = Ipv4Addr;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current > self.end {
-            return None;
-        }
-        let ip = Ipv4Addr::from(self.current);
-        self.current = self.current.wrapping_add(1);
-        Some(ip)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let remaining = if self.current <= self.end {
-            (self.end - self.current + 1) as usize
-        } else {
-            0
-        };
-        (remaining, Some(remaining))
-    }
 }

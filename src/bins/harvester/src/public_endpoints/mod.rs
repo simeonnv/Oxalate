@@ -14,6 +14,9 @@ pub use info::info;
 mod api_docs;
 pub use api_docs::ApiDoc;
 
+pub mod proxy;
+pub use proxy::proxy;
+
 use crate::AppState;
 
 pub fn public_endpoints() -> Router<AppState> {
@@ -21,6 +24,7 @@ pub fn public_endpoints() -> Router<AppState> {
         .route("/ping", get(get_ping))
         .nest("/keylogger", keylogger())
         .nest("/info", info())
+        .nest("/proxy", proxy())
         .merge(SwaggerUi::new("/swagger").url("/api-docs/openapi.json", ApiDoc::openapi()))
     // .route(
     //     "/swagger",
