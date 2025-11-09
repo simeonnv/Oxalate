@@ -1,3 +1,3 @@
-pub async fn get_ping() -> String {
-    "pong".into()
+pub async fn get_ping() -> &'static str {
+    "pong"
 }
