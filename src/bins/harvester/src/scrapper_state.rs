@@ -2,7 +2,6 @@ use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU32;
@@ -25,8 +24,7 @@ impl Default for Stage {
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct GlobalScan {
-    pub active_jobs: VecDeque<Arc<ProxyJob>>,
-    pub proxy_jobs: DashMap<String, Arc<ProxyJob>>,
+    pub active_jobs: DashMap<String, Arc<ProxyJob>>,
     pub last_ip: Arc<AtomicU32>,
 }
 
@@ -71,31 +69,26 @@ impl ScrapperState {
         if !self.enabled {
             return None;
         }
-
         let global_scan = match &mut self.current_stage {
             Stage::GlobalScan(gs) => gs,
         };
-
-        if global_scan.proxy_jobs.contains_key(proxy_id) {
-            return None;
+        if let Some(e) = global_scan.active_jobs.get(proxy_id) {
+            return Some(e.to_owned());
         }
-
-        for job in global_scan.active_jobs.iter_mut() {
+        for mut job in global_scan.active_jobs.iter_mut() {
+            let (id, job) = job.pair_mut();
             if job.dead {
                 let proxy_job = Arc::new(ProxyJob {
                     urls: job.urls.clone(),
                     dead: false,
-                    assigned_to: proxy_id.to_owned(),
+                    assigned_to: id.to_owned(),
                 });
-                *job = proxy_job.clone();
-                global_scan.proxy_jobs.remove(&job.assigned_to);
-                global_scan
-                    .proxy_jobs
-                    .insert(proxy_id.to_owned(), proxy_job.clone());
+                *job = proxy_job;
+
+                return Some(job.to_owned());
             }
         }
 
-        // Allocate a fresh block of 256 IPs
         let ip = global_scan.last_ip.fetch_add(256, Ordering::Relaxed);
         let mut urls = Vec::with_capacity(256);
         for i in 0..256 {
@@ -107,8 +100,10 @@ impl ScrapperState {
             dead: false,
             assigned_to: proxy_id.to_owned(),
         });
-        global_scan.active_jobs.push_front(proxy_job.clone());
-        Some(proxy_job.clone())
+        global_scan
+            .active_jobs
+            .insert(proxy_id.to_owned(), proxy_job.clone());
+        Some(proxy_job)
     }
 
     pub fn reset(&mut self) -> Result<(), Error> {
