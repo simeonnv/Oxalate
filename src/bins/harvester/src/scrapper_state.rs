@@ -1,19 +1,40 @@
-use std::net::Ipv4Addr;
-use std::sync::atomic::Ordering;
-use std::sync::atomic::{AtomicU16, AtomicU32};
-
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-
 use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
+use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
+use std::net::Ipv4Addr;
+use std::sync::Arc;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering;
+use thiserror::Error;
+use url::Url;
 
 const SCRAPPER_STATE_KEY: &[u8; 14] = b"scrapper state";
 
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum Stage {
-    #[default]
-    GlobalScan,
+    GlobalScan(GlobalScan),
+}
+
+impl Default for Stage {
+    fn default() -> Self {
+        Self::GlobalScan(GlobalScan::default())
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct GlobalScan {
+    pub active_jobs: VecDeque<Arc<ProxyJob>>,
+    pub proxy_jobs: DashMap<String, Arc<ProxyJob>>,
+    pub last_ip: Arc<AtomicU32>,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct ProxyJob {
+    urls: Vec<Url>,
+    dead: bool,
+    assigned_to: String,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -46,27 +67,54 @@ impl ScrapperState {
         self.enabled = true
     }
 
-    // pub fn req_addresses(&mut self) -> Option<Ipv4Range> {
-    //     if !self.enabled {
-    //         return None;
-    //     }
-    //     let old = self.scanned_addr_counter.fetch_add(256, Ordering::Relaxed);
-    //     if old > u32::MAX.wrapping_sub(255) {
-    //         self.enabled = false;
-    //         let _ = self.save_state();
-    //         return None;
-    //     }
+    pub fn req_addresses(&mut self, proxy_id: &str) -> Option<Arc<ProxyJob>> {
+        if !self.enabled {
+            return None;
+        }
 
-    //     Some(Ipv4Range {
-    //         current: old,
-    //         end: old.wrapping_add(255),
-    //     })
-    // }
+        let global_scan = match &mut self.current_stage {
+            Stage::GlobalScan(gs) => gs,
+        };
+
+        if global_scan.proxy_jobs.contains_key(proxy_id) {
+            return None;
+        }
+
+        for job in global_scan.active_jobs.iter_mut() {
+            if job.dead {
+                let proxy_job = Arc::new(ProxyJob {
+                    urls: job.urls.clone(),
+                    dead: false,
+                    assigned_to: proxy_id.to_owned(),
+                });
+                *job = proxy_job.clone();
+                global_scan.proxy_jobs.remove(&job.assigned_to);
+                global_scan
+                    .proxy_jobs
+                    .insert(proxy_id.to_owned(), proxy_job.clone());
+            }
+        }
+
+        // Allocate a fresh block of 256 IPs
+        let ip = global_scan.last_ip.fetch_add(256, Ordering::Relaxed);
+        let mut urls = Vec::with_capacity(256);
+        for i in 0..256 {
+            let url = Url::parse(&format!("https://{}", Ipv4Addr::from(ip + i))).unwrap();
+            urls.push(url);
+        }
+        let proxy_job = Arc::new(ProxyJob {
+            urls,
+            dead: false,
+            assigned_to: proxy_id.to_owned(),
+        });
+        global_scan.active_jobs.push_front(proxy_job.clone());
+        Some(proxy_job.clone())
+    }
 
     pub fn reset(&mut self) -> Result<(), Error> {
         *self = Self {
             enabled: false,
-            current_stage: self.current_stage,
+            current_stage: self.current_stage.clone(),
         };
         self.save_state()?;
         Ok(())
