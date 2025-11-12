@@ -1,0 +1,25 @@
+services:
+  harvester-postgres-db:
+    image: postgres:16
+    container_name: harvester-postgres-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      POSTGRES_DB: ${POSTGRES_DB:-Oxalate}
+    volumes:
+      - harvester_postgres_data:/var/lib/postgresql/data
+    labels:
+      kompose.init.containers.command: "echo Initializing harvester postgres database"
+      kompose.controller.expose.port: true
+    ports:
+      - "6666:5432"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  harvester_postgres_data:

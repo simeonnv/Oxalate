@@ -49,9 +49,10 @@ pub struct ProxyJob {
     job_dispatched: NaiveDateTime,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ProxyOutput {
     pub url: Url,
-    pub status: StatusCode,
+    pub status: u16,
     pub body: String,
     pub headers: HashMap<String, String>,
 }

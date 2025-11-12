@@ -27,8 +27,8 @@ pub use create_postgres_pool::create_postgres_pool;
 
 #[derive(Clone)]
 pub struct AppState {
-    db_pool: Pool<Postgres>,
-    scrapper_state: Arc<ScrapperState>,
+    pub db_pool: Pool<Postgres>,
+    pub scrapper_state: Arc<ScrapperState>,
 }
 
 #[tokio::main]
