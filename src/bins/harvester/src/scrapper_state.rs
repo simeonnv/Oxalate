@@ -1,5 +1,6 @@
 use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
+use crate::scrapper_state;
 use axum::http::HeaderMap;
 use axum::http::Response;
 use axum::http::StatusCode;
@@ -7,6 +8,7 @@ use chrono::Duration;
 use chrono::NaiveDateTime;
 use chrono::Utc;
 use dashmap::DashMap;
+use log::error;
 use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
@@ -19,6 +21,7 @@ use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering;
 use thiserror::Error;
 use tokio::spawn;
+use tokio::time::sleep;
 use url::Url;
 use uuid::Uuid;
 
@@ -43,10 +46,10 @@ pub struct GlobalScan {
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct ProxyJob {
-    urls: Vec<Url>,
-    dead: Arc<AtomicBool>,
-    assigned_to: String,
-    job_dispatched: NaiveDateTime,
+    pub urls: Vec<Url>,
+    pub dead: Arc<AtomicBool>,
+    pub assigned_to: String,
+    pub job_dispatched: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -59,12 +62,12 @@ pub struct ProxyOutput {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ScrapperState {
-    pub enabled: bool,
+    pub enabled: AtomicBool,
     pub current_stage: Stage,
 }
 
 impl ScrapperState {
-    pub fn load() -> Result<Self, Error> {
+    pub fn load() -> Result<Arc<Self>, Error> {
         let scrapper_state = DB.get(SCRAPPER_STATE_KEY)?;
         let scrapper_state = match scrapper_state {
             Some(e) => e,
@@ -74,6 +77,21 @@ impl ScrapperState {
                 scrapper_state
             }
         };
+        let scrapper_state = Arc::new(scrapper_state);
+
+        {
+            let scrapper_state = scrapper_state.clone();
+            tokio::spawn(async move {
+                loop {
+                    sleep(Duration::minutes(5).to_std().unwrap());
+                    scrapper_state.check_for_dead_jobs();
+                    if let Err(err) = scrapper_state.save_state() {
+                        error!("failed to save scrapper state in background thread!: {err}");
+                    }
+                }
+            });
+        }
+
         Ok(scrapper_state)
     }
 
@@ -84,14 +102,18 @@ impl ScrapperState {
     }
 
     pub fn enable(&mut self) {
-        self.enabled = true
+        self.enabled.store(true, Ordering::Relaxed);
     }
 
-    pub fn req_addresses(&mut self, proxy_id: &str) -> Option<Arc<ProxyJob>> {
-        if !self.enabled {
+    pub fn disable(&mut self) {
+        self.enabled.store(false, Ordering::Relaxed);
+    }
+
+    pub fn req_addresses(&self, proxy_id: &str) -> Option<Arc<ProxyJob>> {
+        if !self.enabled.load(Ordering::Relaxed) {
             return None;
         }
-        let global_scan = match &mut self.current_stage {
+        let global_scan = match &self.current_stage {
             Stage::GlobalScan(gs) => gs,
         };
         if let Some(e) = global_scan.active_jobs.get(proxy_id) {
@@ -175,7 +197,7 @@ impl ScrapperState {
 
     pub fn reset(&mut self) -> Result<(), Error> {
         *self = Self {
-            enabled: false,
+            enabled: false.into(),
             current_stage: self.current_stage.clone(),
         };
         self.save_state()?;
