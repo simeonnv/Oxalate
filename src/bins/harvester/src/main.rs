@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let scrapper_state = Arc::new(ScrapperState::load()?);
+    let scrapper_state = ScrapperState::load()?;
     let app_state = AppState {
         db_pool,
         scrapper_state,
