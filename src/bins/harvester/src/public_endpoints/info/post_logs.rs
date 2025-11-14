@@ -1,4 +1,4 @@
-use axum::{Json, extract::State, http::HeaderMap, response::IntoResponse};
+use axum::{Json, extract::State, http::HeaderMap};
 use utoipa::ToSchema;
 use uuid::Uuid;
 

@@ -54,6 +54,12 @@ impl KvDb {
     }
 }
 
+impl Default for KvDb {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("failed to serialize value to json for kv -> {0}")]

@@ -1,9 +1,6 @@
 use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
-use crate::scrapper_state;
-use axum::http::HeaderMap;
-use axum::http::Response;
-use axum::http::StatusCode;
+use async_scoped::TokioScope;
 use chrono::Duration;
 use chrono::NaiveDateTime;
 use chrono::Utc;
@@ -83,7 +80,7 @@ impl ScrapperState {
             let scrapper_state = scrapper_state.clone();
             tokio::spawn(async move {
                 loop {
-                    sleep(Duration::minutes(5).to_std().unwrap());
+                    sleep(Duration::minutes(5).to_std().unwrap()).await;
                     scrapper_state.check_for_dead_jobs();
                     if let Err(err) = scrapper_state.save_state() {
                         error!("failed to save scrapper state in background thread!: {err}");
@@ -155,42 +152,39 @@ impl ScrapperState {
     pub async fn complete_job(
         &self,
         proxy_id: &str,
-        completed_job: Box<[ProxyOutput]>,
+        proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
     ) -> Result<(), Error> {
         let Stage::GlobalScan(global_scan) = &self.current_stage;
-        let job = global_scan
+        global_scan
             .active_jobs
-            .get(proxy_id)
-            .ok_or(Error::NoSuchProxyJob)?;
+            .contains_key(proxy_id)
+            .then_some(())
+            .ok_or(Error::DeviceHasNoJob)?;
 
-        let mut join_handles = vec![];
-        for output in completed_job {
-            let db_pool = db_pool.clone();
-            let handle = spawn(async move {
-                let uuid = Uuid::new_v4();
-                let body = output.body;
-                let headers = serde_json::to_value(&output.headers).unwrap();
+        TokioScope::scope_and_block(|spawner| {
+            for output in proxy_outputs {
+                let db_pool = db_pool.clone();
+                spawner.spawn(async move {
+                    let uuid = Uuid::new_v4();
+                    let body = &output.body;
+                    let headers = serde_json::to_value(&output.headers).unwrap();
 
-                sqlx::query!(
-                    "
-                      INSERT INTO Webpages
-                            (webpage_id, body, headers)
-                      VALUES ($1, $2, $3)
-                   ",
-                    uuid,
-                    body,
-                    headers
-                )
-                .execute(&db_pool)
-                .await
-            });
-            join_handles.push(handle);
-        }
-
-        for handle in join_handles {
-            let _ = handle.await;
-        }
+                    sqlx::query!(
+                        "
+                          INSERT INTO Webpages
+                                (webpage_id, body, headers)
+                          VALUES ($1, $2, $3)
+                       ",
+                        uuid,
+                        body,
+                        headers
+                    )
+                    .execute(&db_pool)
+                    .await
+                });
+            }
+        });
 
         Ok(())
     }
@@ -224,6 +218,6 @@ pub enum Error {
     #[error("kv error -> {0}")]
     KvError(#[from] KvError),
 
-    #[error("No such registrated proxy job!")]
-    NoSuchProxyJob,
+    #[error("The device has no registrated proxy job!")]
+    DeviceHasNoJob,
 }
