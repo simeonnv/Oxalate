@@ -17,6 +17,8 @@ use crate::{AppState, Error, scrapper_state::ProxyOutput};
         (status = 200),
     ),
     description = "
+        THIS ENDPOINT IS A WEBSOCKET!!!
+    
         This endpoint acts as a proxy orchestrator and data collector.
         Proxies connect to this endpoint via WebSocket, request URLs, and return the responses for each URL.
         The request format consists of:
