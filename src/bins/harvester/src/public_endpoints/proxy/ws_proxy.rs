@@ -6,7 +6,7 @@ use axum::{
     http::HeaderMap,
     response::{IntoResponse, Response},
 };
-use log::{error, info};
+use log::{debug, error, info};
 
 use crate::{AppState, Error, scrapper_state::ProxyOutput};
 
@@ -17,7 +17,6 @@ use crate::{AppState, Error, scrapper_state::ProxyOutput};
         (status = 200),
     ),
     description = "
-
         This endpoint acts as a proxy orchestrator and data collector.
         Proxies connect to this endpoint via WebSocket, request URLs, and return the responses for each URL.
         The request format consists of:
@@ -41,8 +40,8 @@ use crate::{AppState, Error, scrapper_state::ProxyOutput};
             pub headers: HashMap<String, String>,
         }
 
-        Requesting URLS will return a JSON with a format Vec<Urls>
-        The Urls Struct is just a String type wrapper
+        Requesting URLS will return a JSON with a format Vec<Url>
+        The Url Struct is just a String type wrapper
     ",
     params(
       ("device-id" = String, Header, description = "Device id"),
@@ -108,6 +107,7 @@ async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state
         let msg = &msg[1..];
         match req_type {
             RequestType::ReturnUrlOutputs => {
+                debug!("ReturnUrlOutputs");
                 let proxy_output: Vec<ProxyOutput> = match serde_json::from_slice(msg) {
                     Ok(e) => e,
                     Err(err) => {
@@ -117,11 +117,7 @@ async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state
                 };
                 let db_result = app_state
                     .scrapper_state
-                    .complete_job(
-                        &device_id,
-                        proxy_output.into_boxed_slice(),
-                        app_state.db_pool.to_owned(),
-                    )
+                    .complete_job(&device_id, &proxy_output, app_state.db_pool.to_owned())
                     .await;
                 if let Err(err) = db_result {
                     #[cfg(debug_assertions)]
@@ -131,6 +127,7 @@ async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state
                 continue;
             }
             RequestType::RequestUrls => {
+                debug!("RequestUrls");
                 let job = app_state.scrapper_state.req_addresses(&device_id);
                 let job = match job {
                     Some(e) => e,
