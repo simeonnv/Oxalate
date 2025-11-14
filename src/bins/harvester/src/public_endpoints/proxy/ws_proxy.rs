@@ -63,6 +63,7 @@ async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state
         if msg.is_empty() || msg.len() < 2 {
             continue;
         }
+        dbg!(&msg);
         let req_type = match RequestType::from_byte(msg[0]) {
             Some(e) => e,
             None => {

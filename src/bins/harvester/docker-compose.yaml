@@ -23,3 +23,5 @@ networks:
 
 volumes:
   harvester_postgres_data:
+
+# postgresql://root:root@localhost:6666/Oxalate

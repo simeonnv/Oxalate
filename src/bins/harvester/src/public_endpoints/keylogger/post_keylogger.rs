@@ -66,7 +66,7 @@ pub async fn post_keylogger(
     }
 
     for handle in handles {
-        let _ = handle.await??;
+        let _ = handle.await;
     }
 
     Ok(())
