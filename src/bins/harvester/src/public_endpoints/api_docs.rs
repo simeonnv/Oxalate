@@ -25,7 +25,7 @@ pub use crate::public_endpoints::proxy;
     ),
     tags(
         (name = "Keylogger", description = "endpoints for gathering key strokes"),
-        (name = "Info", description = "endpoints for gathering device info"),
+        (name = "Info", description = "endpoints for gathering proxy info and status"),
         (name = "Health", description = "health"),
         (name = "Proxy", description = "proxy"),
     ),
