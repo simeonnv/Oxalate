@@ -20,6 +20,7 @@ pub struct Req {
     request_body = Req,
     description = "
         Proxies shall constantly send over their resourse usage for it do be saved
+        There is a good crate for collecting system usage: heim
     ",
     responses(),
     params(
