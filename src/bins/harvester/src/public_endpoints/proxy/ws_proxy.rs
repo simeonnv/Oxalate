@@ -16,6 +16,34 @@ use crate::{AppState, Error, scrapper_state::ProxyOutput};
     responses(
         (status = 200),
     ),
+    description = "
+
+        This endpoint acts as a proxy orchestrator and data collector.
+        Proxies connect to this endpoint via WebSocket, request URLs, and return the responses for each URL.
+        The request format consists of:
+        1 byte + JSON
+        The first byte of the request acts as an action identifier.
+        If the first byte is:
+
+        0 → You are requesting URLS
+        1 → You are sending back the responses from the requested URLs
+
+        Following the first byte is the JSON request body.
+
+        For now, requesting URLs does not use the JSON body.
+        Sending back responses requires a JSON body with the following format:
+
+        #[derive(Serialize, Deserialize, Clone)]
+        pub struct ProxyOutput {
+            pub url: Url,
+            pub status: u16,
+            pub body: String,
+            pub headers: HashMap<String, String>,
+        }
+
+        Requesting URLS will return a JSON with a format Vec<Urls>
+        The Urls Struct is just a String type wrapper
+    ",
     params(
       ("device-id" = String, Header, description = "Device id"),
     ),
@@ -46,6 +74,10 @@ impl RequestType {
             1 => Some(Self::ReturnUrlOutputs),
             _ => None,
         }
+    }
+
+    pub fn into_byte(self) -> u8 {
+        self as u8
     }
 }
 
