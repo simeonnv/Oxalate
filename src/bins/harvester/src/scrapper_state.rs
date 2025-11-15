@@ -1,6 +1,6 @@
 use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
-use async_scoped::TokioScope;
+use crate::save_proxy_outputs;
 use chrono::Duration;
 use chrono::NaiveDateTime;
 use chrono::Utc;
@@ -17,10 +17,8 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering;
 use thiserror::Error;
-use tokio::spawn;
 use tokio::time::sleep;
 use url::Url;
-use uuid::Uuid;
 
 const SCRAPPER_STATE_KEY: &[u8; 14] = b"scrapper state";
 
@@ -121,8 +119,8 @@ impl ScrapperState {
             if job.dead.load(Ordering::Relaxed) {
                 let proxy_job = Arc::new(ProxyJob {
                     urls: job.urls.clone(),
-                    dead: Arc::new(AtomicBool::new(false)),
-                    assigned_to: id.to_owned(),
+                    dead: Arc::new(false.into()),
+                    assigned_to: proxy_id.to_owned(),
                     job_dispatched: Utc::now().naive_utc(),
                 });
                 *job = proxy_job;
@@ -162,29 +160,30 @@ impl ScrapperState {
             .then_some(())
             .ok_or(Error::DeviceHasNoJob)?;
 
-        TokioScope::scope_and_block(|spawner| {
-            for output in proxy_outputs {
-                let db_pool = db_pool.clone();
-                spawner.spawn(async move {
-                    let uuid = Uuid::new_v4();
-                    let body = &output.body;
-                    let headers = serde_json::to_value(&output.headers).unwrap();
+        save_proxy_outputs(proxy_outputs, db_pool).await;
+        // TokioScope::scope_and_block(|spawner| {
+        //     for output in proxy_outputs {
+        //         let db_pool = db_pool.clone();
+        //         spawner.spawn(async move {
+        //             let uuid = Uuid::new_v4();
+        //             let body = &output.body;
+        //             let headers = serde_json::to_value(&output.headers).unwrap();
 
-                    sqlx::query!(
-                        "
-                          INSERT INTO Webpages
-                                (webpage_id, body, headers)
-                          VALUES ($1, $2, $3)
-                       ",
-                        uuid,
-                        body,
-                        headers
-                    )
-                    .execute(&db_pool)
-                    .await
-                });
-            }
-        });
+        //             sqlx::query!(
+        //                 "
+        //                   INSERT INTO Webpages
+        //                         (webpage_id, body, headers)
+        //                   VALUES ($1, $2, $3)
+        //                ",
+        //                 uuid,
+        //                 body,
+        //                 headers
+        //             )
+        //             .execute(&db_pool)
+        //             .await
+        //         });
+        //     }
+        // });
 
         Ok(())
     }
