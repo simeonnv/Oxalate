@@ -25,6 +25,9 @@ pub use error::Error;
 mod create_postgres_pool;
 pub use create_postgres_pool::create_postgres_pool;
 
+mod handle_proxy_outputs;
+pub use handle_proxy_outputs::save_proxy_outputs;
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
