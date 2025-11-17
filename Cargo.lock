@@ -1770,6 +1770,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "envconfig",
+ "flate2",
  "lazy_static",
  "log",
  "prost",

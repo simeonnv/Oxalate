@@ -160,30 +160,9 @@ impl ScrapperState {
             .then_some(())
             .ok_or(Error::DeviceHasNoJob)?;
 
-        save_proxy_outputs(proxy_outputs, db_pool).await;
-        // TokioScope::scope_and_block(|spawner| {
-        //     for output in proxy_outputs {
-        //         let db_pool = db_pool.clone();
-        //         spawner.spawn(async move {
-        //             let uuid = Uuid::new_v4();
-        //             let body = &output.body;
-        //             let headers = serde_json::to_value(&output.headers).unwrap();
-
-        //             sqlx::query!(
-        //                 "
-        //                   INSERT INTO Webpages
-        //                         (webpage_id, body, headers)
-        //                   VALUES ($1, $2, $3)
-        //                ",
-        //                 uuid,
-        //                 body,
-        //                 headers
-        //             )
-        //             .execute(&db_pool)
-        //             .await
-        //         });
-        //     }
-        // });
+        if let Err(err) = save_proxy_outputs(proxy_outputs, db_pool).await {
+            error!("error while saving proxy outputs :{err}!");
+        }
 
         Ok(())
     }
