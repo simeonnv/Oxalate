@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS Urls (
+    url TEXT PRIMARY KEY,
+    last_scanned TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP  
+);
+
+CREATE INDEX IF NOT EXISTS idx_urls_url ON Urls (url);

@@ -1,3 +1,4 @@
+use crate::handle_proxy_outputs;
 use crate::kv_db::DB;
 use crate::kv_db::Error as KvError;
 use crate::save_proxy_outputs;
@@ -115,7 +116,7 @@ impl ScrapperState {
             return Some(e.to_owned());
         }
         for mut job in global_scan.active_jobs.iter_mut() {
-            let (id, job) = job.pair_mut();
+            let (_, job) = job.pair_mut();
             if job.dead.load(Ordering::Relaxed) {
                 let proxy_job = Arc::new(ProxyJob {
                     urls: job.urls.clone(),
@@ -160,9 +161,7 @@ impl ScrapperState {
             .then_some(())
             .ok_or(Error::DeviceHasNoJob)?;
 
-        if let Err(err) = save_proxy_outputs(proxy_outputs, db_pool).await {
-            error!("error while saving proxy outputs :{err}!");
-        }
+        save_proxy_outputs(proxy_outputs, db_pool).await?;
 
         Ok(())
     }
@@ -194,8 +193,11 @@ impl ScrapperState {
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("kv error -> {0}")]
-    KvError(#[from] KvError),
+    Kv(#[from] KvError),
 
     #[error("The device has no registrated proxy job!")]
     DeviceHasNoJob,
+
+    #[error("failed to save proxy outputs -> {0}")]
+    SaveProxyOutput(#[from] handle_proxy_outputs::Error),
 }

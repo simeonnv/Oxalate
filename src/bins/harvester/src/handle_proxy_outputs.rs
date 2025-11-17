@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use chrono::NaiveDateTime;
 use flate2::Compression;
 use scraper::{Html, Selector};
 use sqlx::{Pool, Postgres};
@@ -79,17 +80,34 @@ pub async fn save_proxy_outputs(
 
         sqlx::query!(
             "
-                    INSERT INTO Webpages
-                        (id, url, compressed_body, keywords, headers)
-                    VALUES
-                        ($1, $2, $3, $4, $5)
-                    ;   
-                ",
+                INSERT INTO Webpages
+                    (id, url, compressed_body, keywords, headers)
+                VALUES
+                    ($1, $2, $3, $4, $5)
+                ;   
+            ",
             id,
             url,
             compressed_html,
             keywords,
             headers_json,
+        )
+        .execute(&db_pool)
+        .await?;
+    }
+
+    for url in urls {
+        let url = url.to_string();
+        sqlx::query!(
+            "
+            INSERT INTO Urls
+                (url, last_scanned)
+            VALUES
+                ($1, $2)
+            ON CONFLICT (url) DO NOTHING;     
+        ",
+            url,
+            None::<NaiveDateTime>,
         )
         .execute(&db_pool)
         .await?;
