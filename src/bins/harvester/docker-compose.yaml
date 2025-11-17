@@ -1,6 +1,6 @@
 services:
   harvester-postgres-db:
-    image: postgres:16
+    image: paradedb/paradedb:latest
     container_name: harvester-postgres-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-root}

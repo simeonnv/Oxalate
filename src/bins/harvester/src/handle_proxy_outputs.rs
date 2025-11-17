@@ -1,12 +1,24 @@
 use std::collections::HashSet;
 
+use flate2::Compression;
 use scraper::{Html, Selector};
 use sqlx::{Pool, Postgres};
+use std::io::prelude::*;
+use thiserror::Error;
 use url::Url;
+use uuid::Uuid;
 
 use crate::scrapper_state::ProxyOutput;
 
-pub async fn save_proxy_outputs(proxy_outputs: &[ProxyOutput], db_pool: Pool<Postgres>) {
+pub struct CompressedHtml {
+    pub keywords: String,
+    pub compressed_html: Box<[u8]>,
+}
+
+pub async fn save_proxy_outputs(
+    proxy_outputs: &[ProxyOutput],
+    db_pool: Pool<Postgres>,
+) -> Result<(), Error> {
     let mut urls = HashSet::new();
     let mut compressed_outputs = vec![];
 
@@ -14,7 +26,8 @@ pub async fn save_proxy_outputs(proxy_outputs: &[ProxyOutput], db_pool: Pool<Pos
         let body = &output.body;
         let html = Html::parse_document(body);
 
-        let href_sel = Selector::parse(r#"a[href], area[href]"#).unwrap();
+        let href_sel = Selector::parse(r#"a[href], area[href]"#)
+            .map_err(|err| Error::HtmlParse(err.to_string()))?;
         for el in html.select(&href_sel) {
             if let Some(link) = el.value().attr("href") {
                 let mut parsed = if let Ok(e) = Url::parse(link) {
@@ -32,16 +45,70 @@ pub async fn save_proxy_outputs(proxy_outputs: &[ProxyOutput], db_pool: Pool<Pos
             }
         }
 
-        let text: Box<[String]> = html
+        let keywords: String = html
             .root_element()
             .text()
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .map(|t| t.to_owned())
             .collect();
-        compressed_outputs.push((output, text));
+
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
+        encoder
+            .write_all(body.as_bytes())
+            .map_err(|err| Error::Compression(err.to_string()))?;
+
+        let compressed_html = encoder
+            .finish()
+            .map_err(|err| Error::Compression(err.to_string()))?
+            .into_boxed_slice();
+        let compressed_html = CompressedHtml {
+            keywords,
+            compressed_html,
+        };
+
+        compressed_outputs.push((output, compressed_html));
     }
 
-    // task work
-    todo!();
+    for (proxy_output, compressed_html) in compressed_outputs {
+        let id = Uuid::new_v4();
+        let headers_json = serde_json::to_value(&proxy_output.headers)
+            .map_err(|err| Error::Json(err.to_string()))?;
+        let url = proxy_output.url.to_string();
+        let keywords = compressed_html.keywords;
+        let compressed_html: &[u8] = &compressed_html.compressed_html;
+
+        sqlx::query!(
+            "
+                    INSERT INTO Webpages
+                        (id, url, compressed_body, keywords, headers)
+                    VALUES
+                        ($1, $2, $3, $4, $5)
+                    ;   
+                ",
+            id,
+            url,
+            compressed_html,
+            keywords,
+            headers_json,
+        )
+        .execute(&db_pool)
+        .await?;
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("failed to compress html -> {0}!")]
+    Compression(String),
+
+    #[error("db error -> {0}")]
+    DB(#[from] sqlx::Error),
+
+    #[error("Html parse error -> {0}!")]
+    HtmlParse(String),
+
+    #[error("Json parse error -> {0}!")]
+    Json(String),
 }
