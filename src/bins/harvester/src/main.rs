@@ -31,6 +31,9 @@ pub use handle_proxy_outputs::save_proxy_outputs;
 mod insure_device_exists;
 pub use insure_device_exists::insure_device_exists;
 
+mod global_scan;
+pub use global_scan::GlobalScan;
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
