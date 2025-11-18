@@ -8,7 +8,7 @@ use axum::{
 };
 use log::{debug, error, info};
 
-use crate::{AppState, Error, scrapper_state::ProxyOutput};
+use crate::{AppState, Error, insure_device_exists, scrapper_state::ProxyOutput};
 
 #[utoipa::path(
     get,
@@ -46,7 +46,7 @@ use crate::{AppState, Error, scrapper_state::ProxyOutput};
         The Url Struct is just a String type wrapper
     ",
     params(
-      ("device-id" = String, Header, description = "Device id"),
+      ("machine-id" = String, Header, description = "Device hardware id"),
     ),
     tag = "Proxy",
 )]
@@ -54,13 +54,14 @@ pub async fn ws_proxy(
     headers: HeaderMap,
     State(app_state): State<AppState>,
     ws: WebSocketUpgrade,
-) -> Response {
-    let device_id = headers.get("device-id").and_then(|v| v.to_str().ok());
-    let device_id = match device_id {
+) -> Result<Response, Error> {
+    let machine_id = headers.get("machine-id").and_then(|v| v.to_str().ok());
+    let machine_id = match machine_id {
         Some(e) => Box::from(e),
-        None => return Error::BadRequest("no or invalid device id!".into()).into_response(),
+        None => return Err(Error::BadRequest("no or invalid device id!".into())),
     };
-    ws.on_upgrade(move |e| handle_socket(e, device_id, app_state))
+    insure_device_exists(&machine_id, &app_state.db_pool).await?;
+    Ok(ws.on_upgrade(move |e| handle_socket(e, machine_id, app_state)))
 }
 
 enum RequestType {
@@ -82,13 +83,13 @@ impl RequestType {
     }
 }
 
-async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state: AppState) {
-    info!("{device_id} connected to the proxy ws");
+async fn handle_socket(mut socket: WebSocket, machine_id: Box<str>, mut app_state: AppState) {
+    info!("{machine_id} connected to the proxy ws");
     while let Some(msg) = socket.recv().await {
         let msg = match msg {
             Ok(e) => e,
             Err(err) => {
-                info!("{device_id} disconnected to the proxy ws: {err}");
+                info!("{machine_id} disconnected to the proxy ws: {err}");
                 return;
             }
         };
@@ -119,7 +120,7 @@ async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state
                 };
                 let db_result = app_state
                     .scrapper_state
-                    .complete_job(&device_id, &proxy_output, app_state.db_pool.to_owned())
+                    .complete_job(&machine_id, &proxy_output, app_state.db_pool.to_owned())
                     .await;
                 if let Err(err) = db_result {
                     #[cfg(debug_assertions)]
@@ -130,7 +131,7 @@ async fn handle_socket(mut socket: WebSocket, device_id: Box<str>, mut app_state
             }
             RequestType::RequestUrls => {
                 debug!("RequestUrls");
-                let job = app_state.scrapper_state.req_addresses(&device_id);
+                let job = app_state.scrapper_state.req_addresses(&machine_id);
                 let job = match job {
                     Some(e) => e,
                     None => continue,

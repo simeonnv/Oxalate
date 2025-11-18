@@ -4,7 +4,7 @@ use axum::{Json, extract::State, http::HeaderMap};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{AppState, Error};
+use crate::{AppState, Error, insure_device_exists};
 
 #[derive(serde::Deserialize, ToSchema)]
 #[schema(as = Post::Info::Resources::Req)]
@@ -24,7 +24,7 @@ pub struct Req {
     ",
     responses(),
     params(
-      ("device-id" = String, Header, description = "Device id"),
+      ("machine-id" = String, Header, description = "Device id"),
     ),
     tag = "Info",
 )]
@@ -34,23 +34,23 @@ pub async fn post_resources(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let device_id = headers.get("device-id").and_then(|v| v.to_str().ok());
-    let device_id = match device_id {
+    let machine_id = headers.get("machine-id").and_then(|v| v.to_str().ok());
+    let machine_id = match machine_id {
         Some(e) => e,
-        None => return Err(Error::BadRequest("no device-id header!".into())),
+        None => return Err(Error::BadRequest("no machine-id header!".into())),
     };
-
+    insure_device_exists(machine_id, &app_state.db_pool).await?;
     let id = Uuid::new_v4();
 
     sqlx::query!(
         "
             INSERT INTO ProxyResourseUsage
-                (proxy_resourse_usage_id, device_id, ram_usage, cpu_usage, net_usage_bytes)
+                (id, device_machine_id, ram_usage, cpu_usage, net_usage_bytes)
             VALUES
                 ($1, $2, $3, $4, $5); 
         ",
         id,
-        device_id,
+        machine_id,
         req.ram_usage,
         req.cpu_usage,
         req.net_usage_bytes as i64,

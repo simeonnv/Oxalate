@@ -1,4 +1,4 @@
-use crate::{AppState, Error};
+use crate::{AppState, Error, insure_device_exists};
 use axum::{extract::State, http::HeaderMap};
 use uuid::Uuid;
 
@@ -7,7 +7,7 @@ use uuid::Uuid;
     path = "/info/uptime",
     description = "devices will ping this endpoint for health/uptime monitoring",
     params(
-      ("device-id" = String, Header, description = "Device id"),
+      ("machine-id" = String, Header, description = "the hardware uuid"),
     ),
     tag = "Info",
     responses()
@@ -17,21 +17,21 @@ pub async fn get_uptime(
     headers: HeaderMap,
     State(app_state): State<AppState>,
 ) -> Result<(), Error> {
-    let device_id = headers
-        .get("device-id")
+    let machine_id = headers
+        .get("machine-id")
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("unknown");
-
-    let uptime_id = Uuid::new_v4();
+        .ok_or(Error::BadRequest("no machine-id header!".into()))?;
+    insure_device_exists(machine_id, &app_state.db_pool).await?;
+    let id = Uuid::new_v4();
     sqlx::query!(
         r#"
             INSERT INTO Uptime
-                (uptime_id, device_id)
+                (id, device_machine_id)
                 VALUES ($1, $2)
             ;
         "#,
-        uptime_id,
-        device_id
+        id,
+        machine_id
     )
     .execute(&app_state.db_pool)
     .await?;
