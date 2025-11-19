@@ -3,14 +3,12 @@ members = [
     "src/bins/harvester",
     "src/bins/outlet",
     "src/libs/keylogger",
-    "src/libs/proxy",
 ]
 
 
 [workspace.dependencies]
 # oxalate_harvester = { path = "src/bins/harvester" }
 oxalate_keylogger = { path = "src/libs/keylogger" }
-oxalate_proxy = { path = "src/libs/proxy" }
 
 tonic = { version = "0.14.2", features = ["server"] }
 tokio = { version = "1.48", features = ["full"] }

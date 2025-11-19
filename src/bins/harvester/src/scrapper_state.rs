@@ -5,6 +5,7 @@ use crate::kv_db::Error as KvError;
 use chrono::Duration;
 use chrono::NaiveDateTime;
 use log::error;
+use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
@@ -80,7 +81,8 @@ impl ScrapperState {
             tokio::spawn(async move {
                 loop {
                     sleep(Duration::minutes(5).to_std().unwrap()).await;
-                    scrapper_state.check_for_dead_jobs();
+                    info!("saving scrapper state!");
+                    // scrapper_state.check_for_dead_jobs();
                     if let Err(err) = scrapper_state.save_state() {
                         error!("failed to save scrapper state in background thread!: {err}");
                     }

