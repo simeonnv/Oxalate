@@ -7,3 +7,4 @@ edition = "2024"
 tokio = { workspace = true }
 thiserror = { workspace = true }
 rdev = "0.5.3"
+log.workspace = true

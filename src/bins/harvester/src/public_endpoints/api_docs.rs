@@ -10,7 +10,7 @@ pub use crate::public_endpoints::proxy;
     paths(
         get_ping::get_ping,
 
-        info::get_uptime::get_uptime,
+        // info::get_uptime::get_uptime,
         info::post_logs::post_logs,
         info::post_resources::post_resources,
 

