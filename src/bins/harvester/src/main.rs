@@ -1,4 +1,6 @@
 use axum::Router;
+use chrono::NaiveDateTime;
+use dashmap::{DashMap, DashSet};
 use env_logger::Env;
 use log::info;
 use sqlx::{Pool, Postgres};
@@ -38,6 +40,7 @@ pub use global_scan::GlobalScan;
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub scrapper_state: Arc<ScrapperState>,
+    pub uptime_connected_devices: Arc<DashMap<String, NaiveDateTime>>,
 }
 
 #[tokio::main]
@@ -58,6 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_state = AppState {
         db_pool,
         scrapper_state,
+        uptime_connected_devices: Arc::new(DashMap::new()),
     };
 
     let public_addr = SocketAddr::new(
