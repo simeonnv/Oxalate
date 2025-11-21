@@ -7,7 +7,7 @@ use axum::{
     response::Response,
 };
 use chrono::Utc;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use uuid::Uuid;
 
 use crate::{AppState, Error, insure_device_exists};
