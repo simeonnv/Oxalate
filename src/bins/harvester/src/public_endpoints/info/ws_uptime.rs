@@ -125,4 +125,5 @@ async fn handle_socket(mut socket: WebSocket, machine_id: String, app_state: App
     {
         error!("failed to insert disconnection uptime in database: {err}");
     };
+    debug!("machine id: {machine_id} disconnected from ws/info/uptime");
 }
