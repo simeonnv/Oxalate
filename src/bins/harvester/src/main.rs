@@ -118,6 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     app_state.shutdown.task_tracker.wait().await;
     info!("shutting down!");
+    let _ = app_state.scrapper_state.save_state();
 
     Ok(())
 }
