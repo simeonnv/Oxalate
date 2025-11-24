@@ -1,0 +1,22 @@
+[package]
+name = "oxalate_scrapper_controller"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dashmap = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+url = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+log = { workspace = true }
+uuid = { workspace = true }
+sqlx = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+
+oxalate_kv_db = { workspace = true }
+
+flate2 = "1.1.5"
+scraper = "0.24.0"

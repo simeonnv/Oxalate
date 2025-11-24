@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse};
 use log::error;
+use oxalate_scrapper_controller::scrapper_controller;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -46,6 +47,13 @@ impl From<sqlx::Error> for Error {
 impl From<tokio::task::JoinError> for Error {
     fn from(err: tokio::task::JoinError) -> Self {
         error!("thread join error: {err}");
+        Self::Internal(err.to_string())
+    }
+}
+
+impl From<scrapper_controller::Error> for Error {
+    fn from(err: scrapper_controller::Error) -> Self {
+        error!("scrapper state error: {err}");
         Self::Internal(err.to_string())
     }
 }

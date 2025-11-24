@@ -1,32 +1,21 @@
 use axum::Router;
-use chrono::NaiveDateTime;
-use dashmap::{DashMap, DashSet};
 use env_logger::Env;
 use log::info;
+use oxalate_kv_db::kv_db::KvDb;
+use oxalate_scrapper_controller::ScrapperController;
 use sqlx::{Pool, Postgres};
-use std::{
-    future::pending,
-    net::SocketAddr,
-    sync::{Arc, atomic::AtomicBool},
-    time::Duration,
-};
-use tokio::{select, signal};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
 use crate::env::ENVVARS;
 
 pub mod env;
 
-pub mod kv_db;
-
-mod public_endpoints;
+pub mod public_endpoints;
 pub use public_endpoints::public_endpoints;
 
-mod private_endpoints;
+pub mod private_endpoints;
 pub use private_endpoints::private_endpoints;
-
-mod scrapper_state;
-pub use scrapper_state::ScrapperState;
 
 mod error;
 pub use error::Error;
@@ -34,21 +23,15 @@ pub use error::Error;
 mod create_postgres_pool;
 pub use create_postgres_pool::create_postgres_pool;
 
-mod handle_proxy_outputs;
-pub use handle_proxy_outputs::save_proxy_outputs;
-
 mod insure_device_exists;
 pub use insure_device_exists::insure_device_exists;
-
-mod global_scan;
-pub use global_scan::GlobalScan;
 
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
-    pub scrapper_state: Arc<ScrapperState>,
-    pub uptime_connected_devices: Arc<DashMap<String, NaiveDateTime>>,
+    pub scrapper_state: Arc<ScrapperController>,
     pub shutdown: Arc<Shutdown>,
+    pub kv_db: KvDb,
 }
 
 #[derive(Default)]
@@ -71,12 +54,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let scrapper_state = ScrapperState::load()?;
+    let kv_db = KvDb::new(&PathBuf::from("./db")).unwrap();
+    let app_state_kv_db = kv_db.clone();
+    let scrapper_state = ScrapperController::load(&kv_db)?;
     let app_state = AppState {
         db_pool,
         scrapper_state,
-        uptime_connected_devices: Arc::new(DashMap::new()),
         shutdown: Arc::new(Shutdown::default()),
+        kv_db: app_state_kv_db,
     };
 
     let public_addr = SocketAddr::new(
@@ -118,7 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     app_state.shutdown.task_tracker.wait().await;
     info!("shutting down!");
-    let _ = app_state.scrapper_state.save_state();
+    let _ = app_state.scrapper_state.save_state(&kv_db);
 
     Ok(())
 }

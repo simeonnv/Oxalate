@@ -1,18 +1,11 @@
 use std::f32;
 
 use axum::{Json, extract::State, http::HeaderMap};
-use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{AppState, Error, insure_device_exists};
+use oxalate_schemas::harvester::public::info::post_resources::*;
 
-#[derive(serde::Deserialize, ToSchema)]
-#[schema(as = Post::Info::Resources::Req)]
-pub struct Req {
-    pub ram_usage: f32,
-    pub cpu_usage: f32,
-    pub net_usage_bytes: u32,
-}
+use crate::{AppState, Error, insure_device_exists};
 
 #[utoipa::path(
     post,

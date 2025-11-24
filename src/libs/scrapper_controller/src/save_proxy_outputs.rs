@@ -9,7 +9,7 @@ use thiserror::Error;
 use url::Url;
 use uuid::Uuid;
 
-use crate::scrapper_state::ProxyOutput;
+use crate::scrapper_controller::ProxyOutput;
 
 pub struct CompressedHtml {
     pub keywords: String,

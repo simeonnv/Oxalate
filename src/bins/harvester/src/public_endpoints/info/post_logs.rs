@@ -1,21 +1,9 @@
 use axum::{Json, extract::State, http::HeaderMap};
-use utoipa::ToSchema;
 use uuid::Uuid;
 
+use oxalate_schemas::harvester::public::info::post_logs::*;
+
 use crate::{AppState, Error, insure_device_exists};
-
-#[derive(serde::Deserialize, ToSchema)]
-#[schema(as = Post::Info::Logs::Req)]
-pub struct Req {
-    pub logs: Vec<Log>,
-}
-
-#[derive(serde::Deserialize, ToSchema)]
-#[schema(as = Post::Info::Logs::Req::Log)]
-pub struct Log {
-    pub log_level: String,
-    pub body: String,
-}
 
 #[utoipa::path(
     post,

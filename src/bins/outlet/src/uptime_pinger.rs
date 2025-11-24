@@ -1,24 +1,18 @@
-use futures_util::{SinkExt, StreamExt};
-use log::{error, info};
-use reqwest::header::HeaderValue;
-use std::{borrow::Cow, fmt::Debug, time::Duration};
+use log::error;
+use reqwest::Client;
+use std::time::Duration;
 use tokio::time::sleep;
-use tokio_tungstenite::{
-    connect_async,
-    tungstenite::{Message, client::IntoClientRequest, http::Request, protocol::WebSocketConfig},
-};
 
-use crate::{HARVESTER_URL, MACHINE_ID, WsConnection};
+use crate::HARVESTER_URL;
 
-pub fn uptime_pinger() {
+pub fn uptime_pinger(reqwest_client: Client) {
     tokio::spawn(async move {
-        let url = format!("ws://{}/info/uptime", *HARVESTER_URL);
-        let mut ws = WsConnection::connect(url).await;
-
+        let url = format!("{}/info/uptime", *HARVESTER_URL);
         loop {
-            ws.send(Message::Ping(vec![].into())).await;
-            info!("Ping sent to uptime ws");
-            sleep(Duration::from_secs(15)).await;
+            if let Err(err) = reqwest_client.get(&url).send().await {
+                error!("failed to send get request to /info/uptime!: {err}");
+            };
+            sleep(Duration::from_secs(60)).await;
         }
     });
 }
