@@ -1,10 +1,10 @@
-use axum::{Router, routing::any};
+use axum::{Router, routing::post};
 
-pub mod ws_proxy;
-pub use ws_proxy::ws_proxy;
+pub mod post_proxy;
+pub use post_proxy::post_proxy;
 
 use crate::AppState;
 
 pub fn proxy() -> Router<AppState> {
-    Router::new().route("/", any(ws_proxy))
+    Router::new().route("/", post(post_proxy))
 }

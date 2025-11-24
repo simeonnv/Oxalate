@@ -1,28 +1,23 @@
-use crate::env::ENVVARS;
-use lazy_static::lazy_static;
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use sled::Db;
 use thiserror::Error;
 
-pub struct KvDb {
-    pub db: Db,
-}
-
-lazy_static! {
-    pub static ref DB: KvDb = KvDb::new();
-}
+#[derive(Clone)]
+pub struct KvDb(Db);
 
 impl KvDb {
-    pub fn new() -> Self {
-        let db = sled::open(&ENVVARS.harvester_kv_db_path).unwrap();
-        Self { db }
+    pub fn new(path: &PathBuf) -> Result<Self, Error> {
+        let db = sled::open(path).map_err(|err| Error::FailedToInit(err.to_string()))?;
+        Ok(Self(db))
     }
 
     pub fn insert<T: AsRef<[u8]>, S: Serialize>(&self, key: &T, value: &S) -> Result<(), Error> {
         let json =
             serde_json::to_vec(value).map_err(|err| Error::JsonSerializeError(err.to_string()))?;
 
-        self.db
+        self.0
             .insert(key, json)
             .map_err(|err| Error::FailedToInsertInKv(err.to_string()))?;
 
@@ -34,7 +29,7 @@ impl KvDb {
         key: &T,
     ) -> Result<Option<S>, Error> {
         let val = self
-            .db
+            .0
             .get(key)
             .map_err(|err| Error::FailedToGetFromKv(err.to_string()))?
             .map(|e| {
@@ -47,16 +42,10 @@ impl KvDb {
     }
 
     pub fn flush(&self) -> Result<(), Error> {
-        self.db
+        self.0
             .flush()
             .map_err(|e| Error::FailedToSaveToDisk(e.to_string()))?;
         Ok(())
-    }
-}
-
-impl Default for KvDb {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -76,4 +65,7 @@ pub enum Error {
 
     #[error("failed to save kv to disk -> {0}")]
     FailedToSaveToDisk(String),
+
+    #[error("failed to init kv db -> {0}")]
+    FailedToInit(String),
 }

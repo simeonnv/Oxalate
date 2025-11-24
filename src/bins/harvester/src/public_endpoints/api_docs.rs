@@ -13,10 +13,11 @@ pub use crate::public_endpoints::proxy;
         // info::get_uptime::get_uptime,
         info::post_logs::post_logs,
         info::post_resources::post_resources,
+        info::get_uptime::get_uptime,
 
         keylogger::post_keylogger::post_keylogger,
 
-        proxy::ws_proxy::ws_proxy,
+        proxy::post_proxy::post_proxy,
         // routes::get_ping::get_ping,
         // routes::get_public_pem::get_public_pem,
         // routes::post_login::post_login,
