@@ -6,6 +6,7 @@ use oxalate_scrapper_controller::ScrapperController;
 use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
+use tower_http::trace::TraceLayer;
 
 use crate::env::ENVVARS;
 
@@ -40,7 +41,7 @@ pub struct Shutdown {
     pub token: CancellationToken,
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = ENVVARS.rust_log;
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
@@ -57,6 +58,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let kv_db = KvDb::new(&PathBuf::from("./db")).unwrap();
     let app_state_kv_db = kv_db.clone();
     let scrapper_state = ScrapperController::load(&kv_db)?;
+    scrapper_state.enable();
+
     let app_state = AppState {
         db_pool,
         scrapper_state,
@@ -74,7 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let public_listener = tokio::net::TcpListener::bind(public_addr).await.unwrap();
         let router = Router::new()
             .merge(public_endpoints())
-            .with_state(pub_app_state);
+            .with_state(pub_app_state)
+            .layer(TraceLayer::new_for_http());
 
         info!("public server running on {public_addr}!");
         axum::serve(public_listener, router)
@@ -93,7 +97,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let private_listener = tokio::net::TcpListener::bind(private_addr).await.unwrap();
         let router = Router::new()
             .merge(private_endpoints())
-            .with_state(priv_app_state);
+            .with_state(priv_app_state)
+            .layer(TraceLayer::new_for_http());
         info!("private server running on {private_addr}!");
         axum::serve(private_listener, router)
             .with_graceful_shutdown(shutdown_signal(priv_shutdown))

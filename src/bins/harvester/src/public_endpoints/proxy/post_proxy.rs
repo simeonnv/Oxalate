@@ -26,7 +26,7 @@ pub async fn post_proxy(
         Some(e) => e,
         None => return Err(Error::BadRequest("no or invalid device id!".into())),
     };
-    insure_device_exists(&machine_id, &app_state.db_pool).await?;
+    insure_device_exists(machine_id, &app_state.db_pool).await?;
 
     match req {
         Req::RequestUrls => {

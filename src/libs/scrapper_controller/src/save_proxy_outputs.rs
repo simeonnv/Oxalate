@@ -2,12 +2,12 @@ use std::collections::HashSet;
 
 use chrono::NaiveDateTime;
 use flate2::Compression;
+use log::info;
 use scraper::{Html, Selector};
 use sqlx::{Pool, Postgres};
 use std::io::prelude::*;
 use thiserror::Error;
 use url::Url;
-use uuid::Uuid;
 
 use crate::scrapper_controller::ProxyOutput;
 
@@ -17,6 +17,7 @@ pub struct CompressedHtml {
 }
 
 pub async fn save_proxy_outputs(
+    proxy_id: &str,
     proxy_outputs: &[ProxyOutput],
     db_pool: Pool<Postgres>,
 ) -> Result<(), Error> {
@@ -25,6 +26,11 @@ pub async fn save_proxy_outputs(
 
     for output in proxy_outputs {
         let body = &output.body;
+
+        if body.is_empty() {
+            continue;
+        }
+
         let html = Html::parse_document(body);
 
         let href_sel = Selector::parse(r#"a[href], area[href]"#)
@@ -70,32 +76,31 @@ pub async fn save_proxy_outputs(
         compressed_outputs.push((output, compressed_html));
     }
 
-    for (proxy_output, compressed_html) in compressed_outputs {
-        let id = Uuid::new_v4();
+    for (proxy_output, compressed_html) in compressed_outputs.into_iter() {
         let headers_json = serde_json::to_value(&proxy_output.headers)
             .map_err(|err| Error::Json(err.to_string()))?;
         let url = proxy_output.url.to_string();
         let keywords = compressed_html.keywords;
         let compressed_html: &[u8] = &compressed_html.compressed_html;
-
         sqlx::query!(
             "
                 INSERT INTO Webpages
-                    (id, url, compressed_body, keywords, headers)
+                    (url, compressed_body, keywords, headers, device_machine_id)
                 VALUES
                     ($1, $2, $3, $4, $5)
-                ;   
+                ON CONFLICT (url) DO NOTHING;   
             ",
-            id,
             url,
             compressed_html,
             keywords,
             headers_json,
+            proxy_id
         )
         .execute(&db_pool)
         .await?;
     }
 
+    info!("all webpages sent, sending urls!");
     for url in urls {
         let url = url.to_string();
         sqlx::query!(
@@ -113,6 +118,7 @@ pub async fn save_proxy_outputs(
         .await?;
     }
 
+    info!("saved outputs!");
     Ok(())
 }
 
