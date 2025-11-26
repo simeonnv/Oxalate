@@ -51,7 +51,7 @@ pub struct ProxyJob {
     pub job_dispatched: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
 pub struct ProxyOutput {
     pub url: Url,
     pub status: u16,
@@ -101,11 +101,11 @@ impl ScrapperController {
         Ok(())
     }
 
-    pub fn enable(&mut self) {
+    pub fn enable(&self) {
         self.enabled.store(true, Ordering::Relaxed);
     }
 
-    pub fn disable(&mut self) {
+    pub fn disable(&self) {
         self.enabled.store(false, Ordering::Relaxed);
     }
 

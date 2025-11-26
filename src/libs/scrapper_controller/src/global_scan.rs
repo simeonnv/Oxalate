@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     net::Ipv4Addr,
     ops::Deref,
     sync::{
@@ -9,6 +10,7 @@ use std::{
 
 use chrono::{Duration, Utc};
 use dashmap::DashMap;
+use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 // use sqlx::{Pool, Postgres};
@@ -19,6 +21,8 @@ use crate::{
     scrapper_controller::{Error, ProxyJob, ProxyOutput, ScraperLevel},
 };
 
+const IP_AMOUNT: u32 = 65536;
+
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct GlobalScan {
     pub active_jobs: DashMap<String, Arc<ProxyJob>>,
@@ -28,6 +32,7 @@ pub struct GlobalScan {
 impl ScraperLevel for GlobalScan {
     fn req_addresses(&self, proxy_id: &str) -> Option<Arc<ProxyJob>> {
         if let Some(e) = self.active_jobs.get(proxy_id) {
+            info!("sending already allocated job for {proxy_id}!");
             return Some(e.to_owned());
         }
 
@@ -41,17 +46,21 @@ impl ScraperLevel for GlobalScan {
                     job_dispatched: Utc::now().naive_utc(),
                 });
                 *job = proxy_job;
-
+                info!("re-distributing a dead job for {proxy_id}!");
                 return Some(job.to_owned());
             }
         }
 
-        let ip = self.last_ip.fetch_add(256, Ordering::Relaxed);
-        let mut urls = Vec::with_capacity(256);
-        for i in 0..256 {
-            let url = Url::parse(&format!("https://{}", Ipv4Addr::from(ip + i))).unwrap();
+        let ip = self.last_ip.fetch_add(IP_AMOUNT, Ordering::Relaxed);
+        let mut urls = Vec::with_capacity(IP_AMOUNT as usize);
+        for i in 0..IP_AMOUNT {
+            let url = Url::parse(&format!("http://{}", Ipv4Addr::from(ip + i))).unwrap();
             urls.push(url);
         }
+        info!(
+            "generating new job with ip-range: {ip}-{} for {proxy_id}",
+            ip + IP_AMOUNT
+        );
         let proxy_job = Arc::new(ProxyJob {
             urls,
             dead: Arc::new(AtomicBool::new(false)),
@@ -69,11 +78,20 @@ impl ScraperLevel for GlobalScan {
         proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
     ) -> Result<(), Error> {
-        self.active_jobs
-            .contains_key(proxy_id)
-            .then_some(())
-            .ok_or(Error::DeviceHasNoJob)?;
-        save_proxy_outputs(proxy_outputs, db_pool).await?;
+        info!("job completed: {proxy_id}");
+        let job = {
+            self.active_jobs
+                .get(proxy_id)
+                .ok_or(Error::DeviceHasNoJob)?
+                .value()
+                .clone()
+        };
+
+        info!("saving proxy outputs in db");
+        save_proxy_outputs(proxy_id, proxy_outputs, db_pool).await?;
+        self.active_jobs.remove(proxy_id);
+
+        info!("successfully completed proxy job!");
         Ok(())
     }
 
