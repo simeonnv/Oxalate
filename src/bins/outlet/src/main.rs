@@ -63,6 +63,8 @@ async fn main() {
     headers.insert("machine-id", HeaderValue::from_str(&MACHINE_ID).unwrap());
     let reqwest_client = Client::builder()
         .default_headers(headers)
+        .danger_accept_invalid_hostnames(true)
+        .danger_accept_invalid_certs(true)
         .pool_max_idle_per_host(0)
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(20))

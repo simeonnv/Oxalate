@@ -54,7 +54,7 @@ impl ScraperLevel for GlobalScan {
         let ip = self.last_ip.fetch_add(IP_AMOUNT, Ordering::Relaxed);
         let mut urls = Vec::with_capacity(IP_AMOUNT as usize);
         for i in 0..IP_AMOUNT {
-            let url = Url::parse(&format!("http://{}", Ipv4Addr::from(ip + i))).unwrap();
+            let url = Url::parse(&format!("https://{}:443", Ipv4Addr::from(ip + i))).unwrap();
             urls.push(url);
         }
         info!(
