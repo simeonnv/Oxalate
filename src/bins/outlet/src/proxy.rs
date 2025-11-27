@@ -56,31 +56,33 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
                             .request_counter
                             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-                        if let Ok(e) = res {
-                            info!("hit a actual website");
-                            let status = e.status().as_u16();
-                            let raw_headers = e.headers().to_owned();
-                            let body = e.text().await.unwrap_or_default();
+                        match res {
+                            Ok(e) => {
+                                info!("hit a actual website");
+                                let status = e.status().as_u16();
+                                let raw_headers = e.headers().to_owned();
+                                let body = e.text().await.unwrap_or_default();
 
-                            let mut headers = HashMap::with_capacity(raw_headers.len());
-                            for (key, val) in raw_headers.iter() {
-                                let key = key.to_string();
-                                let val = match val.to_str() {
-                                    Ok(e) => e,
-                                    Err(_) => continue,
-                                };
+                                let mut headers = HashMap::with_capacity(raw_headers.len());
+                                for (key, val) in raw_headers.iter() {
+                                    let key = key.to_string();
+                                    let val = match val.to_str() {
+                                        Ok(e) => e,
+                                        Err(_) => continue,
+                                    };
 
-                                headers.insert(key.to_string(), val.to_string());
+                                    headers.insert(key.to_string(), val.to_string());
+                                }
+
+                                Some(Box::new(ProxyOutput {
+                                    url,
+                                    status,
+                                    body,
+                                    headers,
+                                }))
                             }
-
-                            return Some(Box::new(ProxyOutput {
-                                url,
-                                status,
-                                body,
-                                headers,
-                            }));
+                            Err(err) => None,
                         }
-                        None
                     });
                 }
             });
