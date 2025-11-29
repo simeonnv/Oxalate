@@ -31,7 +31,7 @@ pub async fn post_proxy(
     match req {
         Req::RequestUrls => {
             let proxy_job = app_state.scrapper_state.req_addresses(machine_id);
-            Ok(Json(Res(proxy_job.map(|e| e.urls.clone()))))
+            Ok(Json(Res(proxy_job.map(|e| Urls::Urls(e.urls.clone())))))
         }
         Req::ReturnUrlOutputs(proxy_outputs) => {
             app_state
