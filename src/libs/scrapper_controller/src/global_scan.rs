@@ -23,10 +23,19 @@ use crate::{
 
 const IP_AMOUNT: u32 = 65536;
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GlobalScan {
     pub active_jobs: DashMap<String, Arc<ProxyJob>>,
     pub last_ip: Arc<AtomicU32>,
+}
+
+impl Default for GlobalScan {
+    fn default() -> Self {
+        Self {
+            active_jobs: DashMap::new(),
+            last_ip: Arc::new(1409286144.into()),
+        }
+    }
 }
 
 impl ScraperLevel for GlobalScan {

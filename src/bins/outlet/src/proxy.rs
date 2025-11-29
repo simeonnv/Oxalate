@@ -43,9 +43,14 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
                     continue;
                 }
             };
+
             info!("got urls!");
             let (_, outputs) = TokioScope::scope_and_block(|spawner| {
                 for url in urls {
+                    if !(url.scheme() == "http" || url.scheme() == "https") {
+                        error!("only http and https is supported for now!");
+                        continue;
+                    }
                     spawner.spawn(async {
                         let res = reqwest_client
                             .get(url.as_str())

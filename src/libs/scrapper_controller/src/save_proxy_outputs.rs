@@ -106,13 +106,14 @@ pub async fn save_proxy_outputs(
         sqlx::query!(
             "
             INSERT INTO Urls
-                (url, last_scanned)
+                (url, last_scanned, device_machine_id)
             VALUES
-                ($1, $2)
+                ($1, $2, $3)
             ON CONFLICT (url) DO NOTHING;     
         ",
             url,
             None::<NaiveDateTime>,
+            proxy_id,
         )
         .execute(&db_pool)
         .await?;
