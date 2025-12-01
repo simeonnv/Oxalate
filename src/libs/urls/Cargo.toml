@@ -1,0 +1,11 @@
+[package]
+name = "oxalate_urls"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+utoipa = { workspace = true }
+url = { workspace = true }
+log = { workspace = true }

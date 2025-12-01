@@ -10,3 +10,4 @@ serde = { workspace = true }
 url = { workspace = true }
 
 oxalate_scrapper_controller = { workspace = true }
+oxalate_urls = { workspace = true }
