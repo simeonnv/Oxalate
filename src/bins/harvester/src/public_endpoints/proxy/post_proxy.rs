@@ -2,6 +2,7 @@ use crate::{AppState, Error, insure_device_exists};
 use axum::{Json, extract::State, http::HeaderMap};
 
 use oxalate_schemas::harvester::public::proxy::post_proxy::*;
+use oxalate_urls::Urls;
 
 #[utoipa::path(
     post,
@@ -31,7 +32,8 @@ pub async fn post_proxy(
     match req {
         Req::RequestUrls => {
             let proxy_job = app_state.scrapper_state.req_addresses(machine_id);
-            Ok(Json(Res(proxy_job.map(|e| Urls::Urls(e.urls.clone())))))
+            // TODO fix this fucking copy
+            Ok(Json(Res(proxy_job.map(|e| e.urls.clone()))))
         }
         Req::ReturnUrlOutputs(proxy_outputs) => {
             app_state

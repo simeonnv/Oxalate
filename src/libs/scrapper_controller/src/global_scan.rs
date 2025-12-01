@@ -11,6 +11,7 @@ use std::{
 use chrono::{Duration, Utc};
 use dashmap::DashMap;
 use log::info;
+use oxalate_urls::{Ipv4UrlRange, Protocol, Urls};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 // use sqlx::{Pool, Postgres};
@@ -50,7 +51,7 @@ impl ScraperLevel for GlobalScan {
             if job.dead.load(Ordering::Relaxed) {
                 let proxy_job = Arc::new(ProxyJob {
                     urls: job.urls.clone(),
-                    dead: Arc::new(false.into()),
+                    dead: false.into(),
                     assigned_to: proxy_id.to_owned(),
                     job_dispatched: Utc::now().naive_utc(),
                 });
@@ -61,18 +62,22 @@ impl ScraperLevel for GlobalScan {
         }
 
         let ip = self.last_ip.fetch_add(IP_AMOUNT, Ordering::Relaxed);
-        let mut urls = Vec::with_capacity(IP_AMOUNT as usize);
-        for i in 0..IP_AMOUNT {
-            let url = Url::parse(&format!("https://{}:443", Ipv4Addr::from(ip + i))).unwrap();
-            urls.push(url);
-        }
+        let ip_range = Ipv4UrlRange {
+            from: ip,
+            to: ip + IP_AMOUNT,
+            index: 0,
+            port: None,
+            protocol: Protocol::Https,
+        };
+
+        let urls = Urls::Ipv4UrlRange(ip_range);
         info!(
             "generating new job with ip-range: {ip}-{} for {proxy_id}",
             ip + IP_AMOUNT
         );
         let proxy_job = Arc::new(ProxyJob {
             urls,
-            dead: Arc::new(AtomicBool::new(false)),
+            dead: AtomicBool::new(false),
             assigned_to: proxy_id.to_owned(),
             job_dispatched: Utc::now().naive_utc(),
         });

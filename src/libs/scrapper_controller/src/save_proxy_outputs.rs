@@ -57,7 +57,8 @@ pub async fn save_proxy_outputs(
             .text()
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .collect();
+            .collect::<Vec<_>>() // collect into a Vec<&str>
+            .join(" ");
 
         let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
         encoder

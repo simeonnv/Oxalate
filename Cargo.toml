@@ -6,6 +6,7 @@ members = [
     "src/libs/kv_db",
     "src/libs/schemas",
     "src/libs/scrapper_controller",
+    "src/libs/urls",
 ]
 
 
@@ -14,6 +15,7 @@ oxalate_keylogger = { path = "src/libs/keylogger" }
 oxalate_scrapper_controller = { path = "src/libs/scrapper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
+oxalate_urls = { path = "src/libs/urls" }
 
 tokio = { version = "1.48", features = ["full"] }
 tonic-reflection = "0.14"

@@ -5,6 +5,7 @@ use chrono::NaiveDateTime;
 use log::error;
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
+use oxalate_urls::Urls;
 use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
@@ -43,10 +44,10 @@ pub trait ScraperLevel {
     fn check_for_dead_jobs(&self);
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct ProxyJob {
-    pub urls: Vec<Url>,
-    pub dead: Arc<AtomicBool>,
+    pub urls: Urls,
+    pub dead: AtomicBool,
     pub assigned_to: String,
     pub job_dispatched: NaiveDateTime,
 }
