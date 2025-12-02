@@ -53,11 +53,28 @@ pub struct ProxyJob {
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
-pub struct ProxyOutput {
+pub enum ProxyOutput {
+    HttpBased(HttpBasedOutput),
+    Msp(MspOutput),
+}
+
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
+pub struct HttpBasedOutput {
     pub url: Url,
     pub status: u16,
     pub body: String,
     pub headers: HashMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
+pub struct MspOutput {
+    pub url: Url,
+    pub online: bool,
+    pub online_players_count: i64,
+    pub max_online_players: i64,
+    pub players: Option<Vec<String>>,
+    pub version: String,
+    pub mods: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Default)]

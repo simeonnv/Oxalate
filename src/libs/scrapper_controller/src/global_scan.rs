@@ -67,7 +67,7 @@ impl ScraperLevel for GlobalScan {
             to: ip + IP_AMOUNT,
             index: 0,
             port: None,
-            protocol: Protocol::Https,
+            protocol: Protocol::Msp,
         };
 
         let urls = Urls::Ipv4UrlRange(ip_range);

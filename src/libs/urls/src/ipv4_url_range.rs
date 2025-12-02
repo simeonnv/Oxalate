@@ -49,6 +49,7 @@ impl Iterator for Ipv4UrlRange {
 pub enum Protocol {
     Http,
     Https,
+    Msp,
 }
 
 impl Protocol {
@@ -56,6 +57,7 @@ impl Protocol {
         match self {
             Protocol::Http => "http",
             Protocol::Https => "https",
+            Protocol::Msp => "msp",
         }
     }
 }

