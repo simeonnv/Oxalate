@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use flate2::Compression;
 use log::info;
 use scraper::{Html, Selector};
@@ -9,28 +9,42 @@ use std::io::prelude::*;
 use thiserror::Error;
 use url::Url;
 
-use crate::scrapper_controller::ProxyOutput;
-
-pub struct CompressedHtml {
-    pub keywords: String,
-    pub compressed_html: Box<[u8]>,
-}
+use crate::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
 
 pub async fn save_proxy_outputs(
     proxy_id: &str,
     proxy_outputs: &[ProxyOutput],
     db_pool: Pool<Postgres>,
 ) -> Result<(), Error> {
-    let mut urls = HashSet::new();
-    let mut compressed_outputs = vec![];
-
+    info!("got outputs, saving them!");
     for output in proxy_outputs {
-        let body = &output.body;
-
-        if body.is_empty() {
-            continue;
+        match output {
+            ProxyOutput::HttpBased(http_based_output) => {
+                save_http_https_output(http_based_output, &db_pool, proxy_id).await?
+            }
+            ProxyOutput::Msp(msp_output) => save_mcp_output(msp_output, &db_pool, proxy_id).await?,
         }
+    }
+    info!("saved outputs!");
+    Ok(())
+}
 
+pub async fn save_http_https_output(
+    output: &HttpBasedOutput,
+    db_pool: &Pool<Postgres>,
+    proxy_id: &str,
+) -> Result<(), Error> {
+    let body = &output.body;
+
+    if body.is_empty() {
+        return Ok(());
+    }
+
+    let mut urls = HashSet::new();
+
+    let keywords;
+
+    {
         let html = Html::parse_document(body);
 
         let href_sel = Selector::parse(r#"a[href], area[href]"#)
@@ -52,56 +66,45 @@ pub async fn save_proxy_outputs(
             }
         }
 
-        let keywords: String = html
+        keywords = html
             .root_element()
             .text()
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
             .collect::<Vec<_>>() // collect into a Vec<&str>
             .join(" ");
-
-        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
-        encoder
-            .write_all(body.as_bytes())
-            .map_err(|err| Error::Compression(err.to_string()))?;
-
-        let compressed_html = encoder
-            .finish()
-            .map_err(|err| Error::Compression(err.to_string()))?
-            .into_boxed_slice();
-        let compressed_html = CompressedHtml {
-            keywords,
-            compressed_html,
-        };
-
-        compressed_outputs.push((output, compressed_html));
     }
 
-    for (proxy_output, compressed_html) in compressed_outputs.into_iter() {
-        let headers_json = serde_json::to_value(&proxy_output.headers)
-            .map_err(|err| Error::Json(err.to_string()))?;
-        let url = proxy_output.url.to_string();
-        let keywords = compressed_html.keywords;
-        let compressed_html: &[u8] = &compressed_html.compressed_html;
-        sqlx::query!(
-            "
+    let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
+    encoder
+        .write_all(body.as_bytes())
+        .map_err(|err| Error::Compression(err.to_string()))?;
+
+    let compressed_html = encoder
+        .finish()
+        .map_err(|err| Error::Compression(err.to_string()))?;
+
+    let headers_json =
+        serde_json::to_value(&output.headers).map_err(|err| Error::Json(err.to_string()))?;
+    let url = output.url.to_string();
+
+    sqlx::query!(
+        "
                 INSERT INTO Webpages
                     (url, compressed_body, keywords, headers, device_machine_id)
                 VALUES
                     ($1, $2, $3, $4, $5)
                 ON CONFLICT (url) DO NOTHING;   
             ",
-            url,
-            compressed_html,
-            keywords,
-            headers_json,
-            proxy_id
-        )
-        .execute(&db_pool)
-        .await?;
-    }
+        url,
+        compressed_html,
+        keywords,
+        headers_json,
+        proxy_id
+    )
+    .execute(db_pool)
+    .await?;
 
-    info!("all webpages sent, sending urls!");
     for url in urls {
         let url = url.to_string();
         sqlx::query!(
@@ -116,11 +119,45 @@ pub async fn save_proxy_outputs(
             None::<NaiveDateTime>,
             proxy_id,
         )
-        .execute(&db_pool)
+        .execute(db_pool)
         .await?;
     }
 
-    info!("saved outputs!");
+    Ok(())
+}
+
+pub async fn save_mcp_output(
+    output: &MspOutput,
+    db_pool: &Pool<Postgres>,
+    proxy_id: &str,
+) -> Result<(), Error> {
+    let now = Utc::now().naive_local();
+    let url = output.url.as_str();
+
+    let players = output.players.as_deref();
+    let mods = output.mods.as_deref();
+    sqlx::query!(
+        "
+            INSERT INTO MinecraftServers
+                (url, last_scanned, device_machine_id, online_when_scraped,
+                 online_players_count, max_online_players, players, server_version, mods)
+            VALUES
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ;
+        ",
+        url,
+        now,
+        proxy_id,
+        output.online,
+        output.online_players_count as i32,
+        output.max_online_players as i32,
+        players,
+        output.version,
+        mods,
+    )
+    .execute(db_pool)
+    .await?;
+
     Ok(())
 }
 
