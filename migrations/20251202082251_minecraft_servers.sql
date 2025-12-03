@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS MinecraftServers (
     online_when_scraped BOOLEAN NOT NULL,
     online_players_count INT NOT NULL,
     max_online_players INT NOT NULL,
+    description TEXT NOT NULL,
     players TEXT[],
     server_version TEXT NOT NULL,
     mods TEXT[],

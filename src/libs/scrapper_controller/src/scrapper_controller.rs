@@ -72,6 +72,7 @@ pub struct MspOutput {
     pub online: bool,
     pub online_players_count: i64,
     pub max_online_players: i64,
+    pub description: String,
     pub players: Option<Vec<String>>,
     pub version: String,
     pub mods: Option<Vec<String>>,
