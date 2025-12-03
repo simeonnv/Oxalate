@@ -123,6 +123,7 @@ async fn handle_msp_request(mc_client: &McClient, url: Url) -> Option<Box<ProxyO
         online: mc_res.online,
         online_players_count: data.players.online,
         max_online_players: data.players.max,
+        description: data.description,
         players,
         version: data.version.name,
         mods,
