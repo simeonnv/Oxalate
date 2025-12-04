@@ -9,13 +9,13 @@ use std::{
 
 use env_logger::Env;
 use log::{LevelFilter, info};
-use mc_server_status::McClient;
 use muddy::muddy;
 use once_cell::sync::Lazy;
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
 };
+use rust_mc_status::McClient;
 
 mod uptime_pinger;
 use tokio::time::sleep;
