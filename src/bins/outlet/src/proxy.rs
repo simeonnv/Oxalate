@@ -4,7 +4,7 @@ use crate::{GlobalState, HARVESTER_URL};
 
 use async_scoped::TokioScope;
 use log::{error, info};
-use mc_server_status::{McClient, ServerData};
+use mc_server_status::{McClient, McError, ServerData};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
 use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
 use reqwest::{Client, Url};

