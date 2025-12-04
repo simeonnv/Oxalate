@@ -1675,23 +1675,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
-name = "mc-server-status"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "852b74807c953dbdc84cda9f3a2399ec7ca441bdb4750f6d9efb60ffb2b0cdb8"
-dependencies = [
- "base64",
- "dashmap 7.0.0-rc2",
- "futures",
- "once_cell",
- "serde",
- "serde_json",
- "thiserror 2.0.17",
- "tokio",
- "trust-dns-resolver",
-]
-
-[[package]]
 name = "md-5"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1920,13 +1903,13 @@ dependencies = [
  "futures-util",
  "log",
  "machine-uid",
- "mc-server-status",
  "muddy",
  "once_cell",
  "oxalate_keylogger",
  "oxalate_schemas",
  "oxalate_scrapper_controller",
  "reqwest",
+ "rust-mc-status",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
@@ -2565,6 +2548,23 @@ checksum = "60b161f275cb337fe0a44d924a5f4df0ed69c2c39519858f931ce61c779d3475"
 dependencies = [
  "sha2",
  "walkdir",
+]
+
+[[package]]
+name = "rust-mc-status"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "354633da6264c9680eb0732255d63117fca03cb27ec8bea02a8ab988b1850676"
+dependencies = [
+ "base64",
+ "dashmap 7.0.0-rc2",
+ "futures",
+ "once_cell",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+ "tokio",
+ "trust-dns-resolver",
 ]
 
 [[package]]

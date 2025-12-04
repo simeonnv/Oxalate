@@ -4,10 +4,10 @@ use crate::{GlobalState, HARVESTER_URL};
 
 use async_scoped::TokioScope;
 use log::{error, info};
-use mc_server_status::{McClient, McError, ServerData};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
 use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
 use reqwest::{Client, Url};
+use rust_mc_status::{McClient, ServerData};
 use tokio::time::sleep;
 
 pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<GlobalState>) {
@@ -94,10 +94,15 @@ async fn handle_msp_request(mc_client: &McClient, url: Url) -> Option<Box<ProxyO
         protocolless_url.push_str(&port.to_string());
     }
 
+    if !mc_client
+        .is_online(&protocolless_url, rust_mc_status::ServerEdition::Java)
+        .await
+    {
+        return None;
+    }
+
     // info!("sending mc request!");
-    let mc_res = mc_client
-        .ping(&protocolless_url, mc_server_status::ServerEdition::Java)
-        .await;
+    let mc_res = mc_client.ping_java(&protocolless_url).await;
     let mc_res = match mc_res {
         Ok(e) => e,
         Err(_) => return None,
@@ -126,6 +131,7 @@ async fn handle_msp_request(mc_client: &McClient, url: Url) -> Option<Box<ProxyO
         description: data.description,
         players,
         version: data.version.name,
+        ping: mc_res.latency,
         mods,
     };
     let proxy_output = ProxyOutput::Msp(proxy_output);

@@ -75,6 +75,7 @@ pub struct MspOutput {
     pub description: String,
     pub players: Option<Vec<String>>,
     pub version: String,
+    pub ping: f64,
     pub mods: Option<Vec<String>>,
 }
 
