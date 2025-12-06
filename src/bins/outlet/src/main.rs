@@ -70,16 +70,16 @@ async fn main() {
         .default_headers(headers)
         .danger_accept_invalid_hostnames(true)
         .danger_accept_invalid_certs(true)
-        .pool_max_idle_per_host(8)
+        .pool_max_idle_per_host(32)
         .connect_timeout(Duration::from_secs(5))
-        .timeout(Duration::from_secs(20))
+        .timeout(Duration::from_secs(90))
         .pool_idle_timeout(Duration::from_secs(5))
         .build()
         .unwrap();
 
     let mc_client = McClient::new()
-        .with_timeout(Duration::from_secs(3))
-        .with_max_parallel(32);
+        .with_timeout(Duration::from_secs(5))
+        .with_max_parallel(256);
 
     uptime_pinger(reqwest_client.clone());
     // keylogger(reqwest_client.to_owned());

@@ -3,12 +3,13 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use crate::{GlobalState, HARVESTER_URL};
 
 use async_scoped::TokioScope;
+use futures::{FutureExt, future::join_all};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
 use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
 use reqwest::{Client, Url};
 use rust_mc_status::{McClient, ServerData};
-use tokio::time::sleep;
+use tokio::time::{Instant, sleep, timeout};
 
 pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<GlobalState>) {
     tokio::spawn(async move {
@@ -46,28 +47,26 @@ pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<Glob
             };
 
             info!("got urls!");
-            let (_, outputs) = TokioScope::scope_and_block(|spawner| {
-                for url in urls {
-                    spawner.spawn(async {
-                        global_state
-                            .request_counter
-                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        match url.scheme() {
-                            "http" | "https" => {
-                                handle_http_https_request(&reqwest_client, url, &global_state).await
-                            }
-                            "msp" => handle_msp_request(&mc_client, url).await,
-                            _ => None,
+
+            let request_futures = urls.into_iter().map(|url| {
+                global_state
+                    .request_counter
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+                async {
+                    match url.scheme() {
+                        "http" | "https" => {
+                            handle_http_https_request(&reqwest_client, url, &global_state).await
                         }
-                    });
+                        "msp" => handle_msp_request(&mc_client, url).await,
+                        _ => None,
+                    }
                 }
             });
 
-            let outputs = outputs
-                .into_iter()
-                .filter_map(|e| e.unwrap())
-                .map(|boxed| *boxed)
-                .collect();
+            let results = join_all(request_futures).await;
+            let outputs: Vec<ProxyOutput> = results.into_iter().flatten().map(|e| *e).collect();
+            mc_client.clear_all_caches();
             info!("all outputs are retrived, returning back to main scrapper server!");
 
             let req = Req::ReturnUrlOutputs(outputs);
@@ -155,7 +154,7 @@ async fn handle_http_https_request(
 
     match res {
         Ok(e) => {
-            info!("hit a actual website");
+            info!("website hit");
             let status = e.status().as_u16();
             let raw_headers = e.headers().to_owned();
             let body = e.text().await.unwrap_or_default();

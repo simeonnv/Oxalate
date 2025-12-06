@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS MinecraftServers (
     description TEXT NOT NULL,
     players TEXT[],
     server_version TEXT NOT NULL,
+    ping DOUBLE PRECISION NOT NULL,
     mods TEXT[],
 
 

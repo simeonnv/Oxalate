@@ -1,3 +1,5 @@
+use crate::Error;
+use crate::ProxyId;
 use crate::global_scan::GlobalScan;
 use crate::save_proxy_outputs;
 use chrono::Duration;
@@ -13,7 +15,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-use thiserror::Error;
 use tokio::time::sleep;
 use url::Url;
 use utoipa::ToSchema;
@@ -34,21 +35,22 @@ impl Default for Stage {
 }
 
 pub trait ScraperLevel {
-    fn req_addresses(&self, proxy_id: &str) -> Option<Arc<ProxyJob>>;
+    fn req_addresses(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>>;
     fn complete_job(
         &self,
-        proxy_id: &str,
+        proxy_id: &ProxyId,
         proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
     ) -> impl std::future::Future<Output = Result<(), Error>> + Send;
     fn check_for_dead_jobs(&self);
+    fn get_jobs(&self) -> HashMap<ProxyId, Arc<ProxyJob>>;
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ProxyJob {
     pub urls: Urls,
     pub dead: AtomicBool,
-    pub assigned_to: String,
+    pub assigned_to: ProxyId,
     pub job_dispatched: NaiveDateTime,
 }
 
@@ -129,7 +131,7 @@ impl ScrapperController {
         self.enabled.store(false, Ordering::Relaxed);
     }
 
-    pub fn req_addresses(&self, proxy_id: &str) -> Option<Arc<ProxyJob>> {
+    pub fn req_addresses(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
         if !self.enabled.load(Ordering::Relaxed) {
             return None;
         }
@@ -140,7 +142,7 @@ impl ScrapperController {
 
     pub async fn complete_job(
         &self,
-        proxy_id: &str,
+        proxy_id: &ProxyId,
         proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
     ) -> Result<(), Error> {
@@ -169,16 +171,4 @@ impl ScrapperController {
             Stage::GlobalScan(ref global_scan) => global_scan.check_for_dead_jobs(),
         }
     }
-}
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("kv error -> {0}")]
-    Kv(#[from] KvError),
-
-    #[error("The device has no registrated proxy job!")]
-    DeviceHasNoJob,
-
-    #[error("failed to save proxy outputs -> {0}")]
-    SaveProxyOutput(#[from] save_proxy_outputs::Error),
 }

@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::HashMap,
     net::Ipv4Addr,
     ops::Deref,
     sync::{
@@ -14,33 +14,22 @@ use log::info;
 use oxalate_urls::{Ipv4UrlRange, Protocol, Urls};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
-// use sqlx::{Pool, Postgres};
-use url::Url;
 
 use crate::{
-    save_proxy_outputs,
-    scrapper_controller::{Error, ProxyJob, ProxyOutput, ScraperLevel},
+    Error, ProxyId, save_proxy_outputs,
+    scrapper_controller::{ProxyJob, ProxyOutput, ScraperLevel},
 };
 
 const IP_AMOUNT: u32 = 65536;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct GlobalScan {
-    pub active_jobs: DashMap<String, Arc<ProxyJob>>,
+    pub active_jobs: DashMap<ProxyId, Arc<ProxyJob>>,
     pub last_ip: Arc<AtomicU32>,
 }
 
-impl Default for GlobalScan {
-    fn default() -> Self {
-        Self {
-            active_jobs: DashMap::new(),
-            last_ip: Arc::new(1409286144.into()),
-        }
-    }
-}
-
 impl ScraperLevel for GlobalScan {
-    fn req_addresses(&self, proxy_id: &str) -> Option<Arc<ProxyJob>> {
+    fn req_addresses(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
         if let Some(e) = self.active_jobs.get(proxy_id) {
             info!("sending already allocated job for {proxy_id}!");
             return Some(e.to_owned());
@@ -67,7 +56,7 @@ impl ScraperLevel for GlobalScan {
             to: ip + IP_AMOUNT,
             index: 0,
             port: None,
-            protocol: Protocol::Msp,
+            protocol: Protocol::Https,
         };
 
         let urls = Urls::Ipv4UrlRange(ip_range);
@@ -88,12 +77,12 @@ impl ScraperLevel for GlobalScan {
 
     async fn complete_job(
         &self,
-        proxy_id: &str,
+        proxy_id: &ProxyId,
         proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
     ) -> Result<(), Error> {
         info!("job completed: {proxy_id}");
-        let job = {
+        let _ = {
             self.active_jobs
                 .get(proxy_id)
                 .ok_or(Error::DeviceHasNoJob)?
@@ -114,10 +103,20 @@ impl ScraperLevel for GlobalScan {
             let job = job.value();
             let now = Utc::now().naive_utc();
             if !job.dead.load(Ordering::Relaxed)
-                && (job.job_dispatched + Duration::minutes(5)) < now
+                && (job.job_dispatched + Duration::minutes(5)) > now
             {
                 job.deref().dead.store(true, Ordering::Relaxed);
             }
         }
+    }
+
+    fn get_jobs(&self) -> HashMap<ProxyId, Arc<ProxyJob>> {
+        self.active_jobs
+            .iter()
+            .map(|pair| {
+                let (k, v) = pair.pair();
+                (k.to_owned(), v.to_owned())
+            })
+            .collect()
     }
 }

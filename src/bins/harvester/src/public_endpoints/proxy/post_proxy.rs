@@ -1,8 +1,8 @@
-use crate::{AppState, Error, insure_device_exists};
+use crate::{AppState, Error};
 use axum::{Json, extract::State, http::HeaderMap};
 
 use oxalate_schemas::harvester::public::proxy::post_proxy::*;
-use oxalate_urls::Urls;
+use oxalate_scrapper_controller::ProxyId;
 
 #[utoipa::path(
     post,
@@ -22,23 +22,18 @@ pub async fn post_proxy(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<Json<Res>, Error> {
-    let machine_id = headers.get("machine-id").and_then(|v| v.to_str().ok());
-    let machine_id = match machine_id {
-        Some(e) => e,
-        None => return Err(Error::BadRequest("no or invalid device id!".into())),
-    };
-    insure_device_exists(machine_id, &app_state.db_pool).await?;
+    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
 
     match req {
         Req::RequestUrls => {
-            let proxy_job = app_state.scrapper_state.req_addresses(machine_id);
+            let proxy_job = app_state.scrapper_state.req_addresses(&proxy_id);
             // TODO fix this fucking copy
             Ok(Json(Res(proxy_job.map(|e| e.urls.clone()))))
         }
         Req::ReturnUrlOutputs(proxy_outputs) => {
             app_state
                 .scrapper_state
-                .complete_job(machine_id, &proxy_outputs, app_state.db_pool)
+                .complete_job(&proxy_id, &proxy_outputs, app_state.db_pool)
                 .await?;
 
             Ok(Json(Res(None)))

@@ -1,5 +1,6 @@
-use crate::{AppState, Error, insure_device_exists};
+use crate::{AppState, Error};
 use axum::{extract::State, http::HeaderMap};
+use oxalate_scrapper_controller::ProxyId;
 
 #[utoipa::path(
     get,
@@ -17,12 +18,7 @@ pub async fn get_uptime(
     headers: HeaderMap,
     State(app_state): State<AppState>,
 ) -> Result<(), Error> {
-    let machine_id = headers.get("machine-id").and_then(|v| v.to_str().ok());
-    let machine_id = match machine_id {
-        Some(e) => e.to_owned(),
-        None => return Err(Error::BadRequest("no or invalid machine id!".into())),
-    };
-    insure_device_exists(&machine_id, &app_state.db_pool).await?;
+    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
 
     sqlx::query!(
         "
@@ -32,7 +28,7 @@ pub async fn get_uptime(
                 ($1)
             ;
         ",
-        machine_id
+        proxy_id.as_ref()
     )
     .execute(&app_state.db_pool)
     .await?;

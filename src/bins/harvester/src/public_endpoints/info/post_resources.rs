@@ -1,11 +1,12 @@
 use std::f32;
 
 use axum::{Json, extract::State, http::HeaderMap};
+use oxalate_scrapper_controller::ProxyId;
 use uuid::Uuid;
 
 use oxalate_schemas::harvester::public::info::post_resources::*;
 
-use crate::{AppState, Error, insure_device_exists};
+use crate::{AppState, Error};
 
 #[utoipa::path(
     post,
@@ -27,12 +28,7 @@ pub async fn post_resources(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let machine_id = headers.get("machine-id").and_then(|v| v.to_str().ok());
-    let machine_id = match machine_id {
-        Some(e) => e,
-        None => return Err(Error::BadRequest("no machine-id header!".into())),
-    };
-    insure_device_exists(machine_id, &app_state.db_pool).await?;
+    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
     let id = Uuid::new_v4();
 
     sqlx::query!(
@@ -43,7 +39,7 @@ pub async fn post_resources(
                 ($1, $2, $3, $4, $5); 
         ",
         id,
-        machine_id,
+        proxy_id.as_ref(),
         req.ram_usage,
         req.cpu_usage,
         req.net_usage_bytes as i64,

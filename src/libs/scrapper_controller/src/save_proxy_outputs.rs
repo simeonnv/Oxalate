@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, ops::Deref};
 
 use chrono::{NaiveDateTime, Utc};
 use flate2::Compression;
@@ -9,10 +9,13 @@ use std::io::prelude::*;
 use thiserror::Error;
 use url::Url;
 
-use crate::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
+use crate::{
+    ProxyId,
+    scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput},
+};
 
 pub async fn save_proxy_outputs(
-    proxy_id: &str,
+    proxy_id: &ProxyId,
     proxy_outputs: &[ProxyOutput],
     db_pool: Pool<Postgres>,
 ) -> Result<(), Error> {
@@ -32,7 +35,7 @@ pub async fn save_proxy_outputs(
 pub async fn save_http_https_output(
     output: &HttpBasedOutput,
     db_pool: &Pool<Postgres>,
-    proxy_id: &str,
+    proxy_id: &ProxyId,
 ) -> Result<(), Error> {
     let body = &output.body;
 
@@ -100,7 +103,7 @@ pub async fn save_http_https_output(
         compressed_html,
         keywords,
         headers_json,
-        proxy_id
+        proxy_id.deref()
     )
     .execute(db_pool)
     .await?;
@@ -117,7 +120,7 @@ pub async fn save_http_https_output(
         ",
             url,
             None::<NaiveDateTime>,
-            proxy_id,
+            proxy_id.deref(),
         )
         .execute(db_pool)
         .await?;
@@ -129,7 +132,7 @@ pub async fn save_http_https_output(
 pub async fn save_mcp_output(
     output: &MspOutput,
     db_pool: &Pool<Postgres>,
-    proxy_id: &str,
+    proxy_id: &ProxyId,
 ) -> Result<(), Error> {
     let now = Utc::now().naive_local();
     let url = output.url.as_str();
@@ -147,7 +150,7 @@ pub async fn save_mcp_output(
         ",
         url,
         now,
-        proxy_id,
+        proxy_id.deref(),
         output.online,
         output.online_players_count as i32,
         output.max_online_players as i32,

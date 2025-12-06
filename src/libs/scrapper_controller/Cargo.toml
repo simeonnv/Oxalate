@@ -15,6 +15,7 @@ uuid = { workspace = true }
 sqlx = { workspace = true }
 serde_json = { workspace = true }
 utoipa = { workspace = true }
+http = { workspace = true }
 
 oxalate_urls = { workspace = true }
 oxalate_kv_db = { workspace = true }
