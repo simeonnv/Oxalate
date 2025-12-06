@@ -51,9 +51,17 @@ impl From<tokio::task::JoinError> for Error {
     }
 }
 
-impl From<scrapper_controller::Error> for Error {
-    fn from(err: scrapper_controller::Error) -> Self {
+impl From<oxalate_scrapper_controller::Error> for Error {
+    fn from(err: oxalate_scrapper_controller::Error) -> Self {
         error!("scrapper state error: {err}");
-        Self::Internal(err.to_string())
+        match err {
+            oxalate_scrapper_controller::Error::NoProxyIdHeader => {
+                Self::BadRequest("no proxy id related header!".into())
+            }
+            oxalate_scrapper_controller::Error::ProxyIdContent => {
+                Self::BadRequest("proxy id related header is empty!".into())
+            }
+            _ => Self::Internal(err.to_string()),
+        }
     }
 }

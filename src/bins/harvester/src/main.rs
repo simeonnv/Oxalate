@@ -24,9 +24,6 @@ pub use error::Error;
 mod create_postgres_pool;
 pub use create_postgres_pool::create_postgres_pool;
 
-mod insure_device_exists;
-pub use insure_device_exists::insure_device_exists;
-
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,

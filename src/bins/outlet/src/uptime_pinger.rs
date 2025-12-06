@@ -14,7 +14,7 @@ pub fn uptime_pinger(reqwest_client: Client) {
                 let status = err.status();
                 error!("failed to send get request to /info/uptime: {err} status: {status:?}");
             };
-            sleep(Duration::from_secs(10)).await;
+            sleep(Duration::from_secs(60)).await;
         }
     });
 }

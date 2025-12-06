@@ -1,9 +1,10 @@
 use axum::{Json, extract::State, http::HeaderMap};
+use oxalate_scrapper_controller::ProxyId;
 use uuid::Uuid;
 
 use oxalate_schemas::harvester::public::info::post_logs::*;
 
-use crate::{AppState, Error, insure_device_exists};
+use crate::{AppState, Error};
 
 #[utoipa::path(
     post,
@@ -21,12 +22,7 @@ pub async fn post_logs(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let machine_id = headers.get("machine-id").and_then(|v| v.to_str().ok());
-    let machine_id = match machine_id {
-        Some(e) => e,
-        None => return Err(Error::BadRequest("no machine-id header!".into())),
-    };
-    insure_device_exists(machine_id, &app_state.db_pool).await?;
+    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
 
     for log in &req.logs {
         let db_pool = app_state.db_pool.clone();
@@ -40,7 +36,7 @@ pub async fn post_logs(
             id,
             log.log_level,
             log.body,
-            machine_id,
+            proxy_id.as_ref(),
         )
         .execute(&db_pool)
         .await?;
