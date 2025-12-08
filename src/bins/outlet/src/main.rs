@@ -15,7 +15,6 @@ use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
 };
-use rust_mc_status::McClient;
 
 mod uptime_pinger;
 use tokio::time::sleep;
@@ -77,13 +76,9 @@ async fn main() {
         .build()
         .unwrap();
 
-    let mc_client = McClient::new()
-        .with_timeout(Duration::from_secs(5))
-        .with_max_parallel(256);
-
     uptime_pinger(reqwest_client.clone());
     // keylogger(reqwest_client.to_owned());
-    proxy(reqwest_client.to_owned(), mc_client, global_state);
+    proxy(reqwest_client.to_owned(), global_state);
 
     info!("successfully inited, running forever!");
     pending::<()>().await;
