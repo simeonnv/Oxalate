@@ -14,8 +14,11 @@ pub enum Error {
     #[error("Invalid proxy header content")]
     ProxyIdContent,
 
-    #[error("The device has no registrated proxy job!")]
-    DeviceHasNoJob,
+    #[error("Proxy has not been seen before therefore has not been saved in internal register")]
+    ProxyHasNotBeenSeenBefore,
+
+    #[error("The proxy has no registrated proxy job!")]
+    ProxyHasNoJob,
 
     #[error("failed to save proxy outputs -> {0}")]
     SaveProxyOutput(#[from] save_proxy_outputs::Error),

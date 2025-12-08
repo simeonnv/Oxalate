@@ -26,7 +26,7 @@ pub async fn post_proxy(
 
     match req {
         Req::RequestUrls => {
-            let proxy_job = app_state.scrapper_state.req_addresses(&proxy_id);
+            let proxy_job = app_state.scrapper_state.get_job(&proxy_id);
             // TODO fix this fucking copy
             Ok(Json(Res(proxy_job.map(|e| e.urls.clone()))))
         }

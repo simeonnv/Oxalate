@@ -3,15 +3,19 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use crate::{GlobalState, HARVESTER_URL};
 
 use async_scoped::TokioScope;
+use craftping::tokio::ping;
 use futures::{FutureExt, future::join_all};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
 use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
 use reqwest::{Client, Url};
-use rust_mc_status::{McClient, ServerData};
-use tokio::time::{Instant, sleep, timeout};
+use tokio::{
+    net::TcpStream,
+    time::{Instant, sleep, timeout},
+};
+use tokio_tungstenite::tungstenite::util::NonBlockingResult;
 
-pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<GlobalState>) {
+pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
     tokio::spawn(async move {
         let url = format!("http://{}/proxy", *HARVESTER_URL);
         loop {
@@ -58,7 +62,7 @@ pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<Glob
                         "http" | "https" => {
                             handle_http_https_request(&reqwest_client, url, &global_state).await
                         }
-                        "msp" => handle_msp_request(&mc_client, url).await,
+                        "msp" => handle_msp_request(url).await,
                         _ => None,
                     }
                 }
@@ -66,7 +70,6 @@ pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<Glob
 
             let results = join_all(request_futures).await;
             let outputs: Vec<ProxyOutput> = results.into_iter().flatten().map(|e| *e).collect();
-            mc_client.clear_all_caches();
             info!("all outputs are retrived, returning back to main scrapper server!");
 
             let req = Req::ReturnUrlOutputs(outputs);
@@ -79,63 +82,50 @@ pub fn proxy(reqwest_client: Client, mc_client: McClient, global_state: Arc<Glob
     });
 }
 
-async fn handle_msp_request(mc_client: &McClient, url: Url) -> Option<Box<ProxyOutput>> {
-    let host = url.host_str();
-    let port = url.port();
-
-    let mut protocolless_url;
-    match host {
-        Some(e) => protocolless_url = String::from(e),
+async fn handle_msp_request(url: Url) -> Option<Box<ProxyOutput>> {
+    let host = match url.host_str() {
+        Some(e) => e,
         None => return None,
     };
-    if let Some(port) = port {
-        protocolless_url.push(':');
-        protocolless_url.push_str(&port.to_string());
-    }
+    let port = url.port().unwrap_or(25565);
 
-    if !mc_client
-        .is_online(&protocolless_url, rust_mc_status::ServerEdition::Java)
-        .await
-    {
-        return None;
-    }
-
-    // info!("sending mc request!");
-    let mc_res = mc_client.ping_java(&protocolless_url).await;
-    let mc_res = match mc_res {
-        Ok(e) => e,
-        Err(_) => return None,
+    let mut stream = match timeout(Duration::from_secs(5), TcpStream::connect((host, port))).await {
+        Ok(Ok(e)) => e,
+        Ok(Err(err)) => {
+            error!("msp tcpstream err: {err}");
+            return None;
+        }
+        _ => return None,
     };
 
+    let mc_res = match timeout(Duration::from_secs(5), ping(&mut stream, host, port)).await {
+        Ok(Ok(e)) => e,
+        _ => return None,
+    };
     info!("mc hit!");
 
-    let data = match mc_res.data {
-        ServerData::Java(java_status) => java_status,
-        ServerData::Bedrock(_) => return None,
-    };
-
-    let players = data
-        .players
+    let players = mc_res
         .sample
         .map(|e| e.iter().map(|e| e.name.to_owned()).collect());
-    let mods = data
-        .mods
-        .map(|e| e.iter().map(|e| e.modid.to_owned()).collect());
-
     let proxy_output = MspOutput {
         url,
-        online: mc_res.online,
-        online_players_count: data.players.online,
-        max_online_players: data.players.max,
-        description: data.description,
+        // TODO get rid of this
+        online: true,
+        online_players_count: mc_res.online_players as i64,
+        max_online_players: mc_res.max_players as i64,
+        description: mc_res
+            .description
+            .map(|e| e.to_string())
+            .unwrap_or("".into()),
         players,
-        version: data.version.name,
-        ping: mc_res.latency,
-        mods,
+        version: mc_res.version,
+        // TODO get rid of both of these
+        ping: 0_f64,
+        mods: None,
     };
     let proxy_output = ProxyOutput::Msp(proxy_output);
 
-    return Some(Box::new(proxy_output));
+    Some(Box::new(proxy_output))
 }
 
 async fn handle_http_https_request(

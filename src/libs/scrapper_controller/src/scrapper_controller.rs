@@ -1,9 +1,11 @@
 use crate::Error;
 use crate::ProxyId;
-use crate::global_scan::GlobalScan;
+use crate::global_scan::Ipv4IteratorJobGenerator;
 use crate::save_proxy_outputs;
 use chrono::Duration;
 use chrono::NaiveDateTime;
+use chrono::Utc;
+use dashmap::DashMap;
 use log::error;
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
@@ -23,27 +25,8 @@ use oxalate_kv_db::kv_db::Error as KvError;
 
 const SCRAPPER_STATE_KEY: &[u8; 14] = b"scrapper state";
 
-#[derive(Serialize, Deserialize, Clone)]
-pub enum Stage {
-    GlobalScan(GlobalScan),
-}
-
-impl Default for Stage {
-    fn default() -> Self {
-        Self::GlobalScan(GlobalScan::default())
-    }
-}
-
-pub trait ScraperLevel {
-    fn req_addresses(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>>;
-    fn complete_job(
-        &self,
-        proxy_id: &ProxyId,
-        proxy_outputs: &[ProxyOutput],
-        db_pool: Pool<Postgres>,
-    ) -> impl std::future::Future<Output = Result<(), Error>> + Send;
-    fn check_for_dead_jobs(&self);
-    fn get_jobs(&self) -> HashMap<ProxyId, Arc<ProxyJob>>;
+pub trait ScraperJobGenerator {
+    fn generate_new_job(&self, proxy_id: &ProxyId) -> Arc<ProxyJob>;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -84,7 +67,15 @@ pub struct MspOutput {
 #[derive(Serialize, Deserialize, Default)]
 pub struct ScrapperController {
     pub enabled: AtomicBool,
-    pub current_stage: Stage,
+    pub proxies: DashMap<ProxyId, (JobGenerators, Option<Arc<ProxyJob>>)>,
+    // generates jobs by iterating over every single possible ipv4 addr
+    pub global_ip_job_generator: Ipv4IteratorJobGenerator,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub enum JobGenerators {
+    #[default]
+    Ipv4Iterator,
 }
 
 impl ScrapperController {
@@ -131,12 +122,23 @@ impl ScrapperController {
         self.enabled.store(false, Ordering::Relaxed);
     }
 
-    pub fn req_addresses(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
+    pub fn get_job(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
         if !self.enabled.load(Ordering::Relaxed) {
             return None;
         }
-        match self.current_stage {
-            Stage::GlobalScan(ref global_scan) => global_scan.req_addresses(proxy_id),
+        let proxy = self.proxies.get(proxy_id)?;
+        if let Some(proxy_job) = &proxy.1 {
+            return Some(proxy_job.to_owned());
+        }
+
+        if let Some(proxy_job) = self.find_and_reassign_dead_job(proxy_id) {
+            return Some(proxy_job);
+        }
+
+        match proxy.0 {
+            JobGenerators::Ipv4Iterator => {
+                Some(self.global_ip_job_generator.generate_new_job(proxy_id))
+            }
         }
     }
 
@@ -146,29 +148,44 @@ impl ScrapperController {
         proxy_outputs: &[ProxyOutput],
         db_pool: Pool<Postgres>,
     ) -> Result<(), Error> {
-        match self.current_stage {
-            Stage::GlobalScan(ref global_scan) => {
-                global_scan
-                    .complete_job(proxy_id, proxy_outputs, db_pool)
-                    .await?
-            }
+        let mut entry = self
+            .proxies
+            .get_mut(proxy_id)
+            .ok_or(Error::ProxyHasNotBeenSeenBefore)?;
+        let (_, job) = entry.value_mut();
+        if job.is_none() {
+            return Err(Error::ProxyHasNoJob);
         }
-
+        *job = None;
+        save_proxy_outputs(proxy_id, proxy_outputs, db_pool).await?;
         Ok(())
     }
 
-    pub fn reset(&mut self) {
-        *self = Self {
-            enabled: false.into(),
-            current_stage: match self.current_stage {
-                Stage::GlobalScan(_) => Stage::GlobalScan(GlobalScan::default()),
-            },
-        };
-    }
+    pub fn find_and_reassign_dead_job(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
+        for mut v in self.proxies.iter_mut() {
+            let (_, job) = v.value_mut();
+            let job = match job {
+                Some(e) => e,
+                None => continue,
+            };
+            let now = Utc::now().naive_local();
 
-    pub fn check_for_dead_jobs(&self) {
-        match self.current_stage {
-            Stage::GlobalScan(ref global_scan) => global_scan.check_for_dead_jobs(),
+            // i could replace this with a seperate funtion that runs every minute instad of having this run on every job assign
+            if job.job_dispatched + Duration::minutes(5) > now {
+                job.dead.store(true, Ordering::Relaxed);
+            }
+
+            if job.dead.load(Ordering::Relaxed) {
+                *job = Arc::new(ProxyJob {
+                    urls: job.urls.to_owned(),
+                    dead: false.into(),
+                    assigned_to: proxy_id.to_owned(),
+                    job_dispatched: now,
+                });
+
+                return Some(job.to_owned());
+            }
         }
+        None
     }
 }
