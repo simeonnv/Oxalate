@@ -8,6 +8,7 @@ use futures::{FutureExt, future::join_all};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
 use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
+use oxalate_urls::urls::ProxyReq;
 use reqwest::{Client, Url};
 use tokio::{
     net::TcpStream,
@@ -41,7 +42,7 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
                     continue;
                 }
             };
-            let urls = match res.0 {
+            let reqs = match res.0 {
                 Some(e) => e,
                 None => {
                     info!("proxy controller is paused / disabled, waiting for it to re-activate");
@@ -52,18 +53,18 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
 
             info!("got urls!");
 
-            let request_futures = urls.into_iter().map(|url| {
+            let request_futures = reqs.0.into_iter().map(|req: ProxyReq| {
                 global_state
                     .request_counter
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
                 async {
-                    match url.scheme() {
-                        "http" | "https" => {
-                            handle_http_https_request(&reqwest_client, url, &global_state).await
+                    match req {
+                        ProxyReq::Msp(e) => handle_msp_request(e.url).await,
+                        ProxyReq::Http(e) | ProxyReq::Https(e) => {
+                            handle_http_https_request(&reqwest_client, e.url, &global_state).await
                         }
-                        "msp" => handle_msp_request(url).await,
-                        _ => None,
+                        ProxyReq::Tcp(e) => todo!(),
                     }
                 }
             });

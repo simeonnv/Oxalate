@@ -1,5 +1,5 @@
 use oxalate_scrapper_controller::scrapper_controller::ProxyOutput;
-use oxalate_urls::Urls;
+use oxalate_urls::urls::ProxyReqs;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -12,4 +12,4 @@ pub enum Req {
 
 #[derive(Deserialize, Serialize, ToSchema)]
 #[schema(as = Post::Proxy::Res)]
-pub struct Res(pub Option<Urls>);
+pub struct Res(pub Option<ProxyReqs>);
