@@ -9,7 +9,7 @@ use dashmap::DashMap;
 use log::error;
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
-use oxalate_urls::Urls;
+use oxalate_urls::urls::ProxyReqs;
 use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
@@ -31,7 +31,7 @@ pub trait ScraperJobGenerator {
 
 #[derive(Serialize, Deserialize)]
 pub struct ProxyJob {
-    pub urls: Urls,
+    pub reqs: ProxyReqs,
     pub dead: AtomicBool,
     pub assigned_to: ProxyId,
     pub job_dispatched: NaiveDateTime,
@@ -177,7 +177,7 @@ impl ScrapperController {
 
             if job.dead.load(Ordering::Relaxed) {
                 *job = Arc::new(ProxyJob {
-                    urls: job.urls.to_owned(),
+                    reqs: job.reqs.to_owned(),
                     dead: false.into(),
                     assigned_to: proxy_id.to_owned(),
                     job_dispatched: now,

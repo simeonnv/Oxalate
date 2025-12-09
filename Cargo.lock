@@ -1847,6 +1847,7 @@ dependencies = [
  "oxalate_keylogger",
  "oxalate_schemas",
  "oxalate_scrapper_controller",
+ "oxalate_urls",
  "reqwest",
  "serde",
  "serde_json",
