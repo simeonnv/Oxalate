@@ -56,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_state_kv_db = kv_db.clone();
     let scrapper_state = ScrapperController::load(&kv_db)?;
     scrapper_state.enable();
+    dbg!(&scrapper_state);
 
     let app_state = AppState {
         db_pool,

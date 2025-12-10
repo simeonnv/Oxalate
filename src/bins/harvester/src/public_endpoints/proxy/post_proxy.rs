@@ -23,10 +23,12 @@ pub async fn post_proxy(
     Json(req): Json<Req>,
 ) -> Result<Json<Res>, Error> {
     let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
+    dbg!(&req);
 
     match req {
         Req::RequestUrls => {
             let proxy_job = app_state.scrapper_state.get_job(&proxy_id);
+            dbg!(&proxy_job);
             // TODO fix this fucking copy
             Ok(Json(Res(proxy_job.map(|e| e.reqs.clone()))))
         }
