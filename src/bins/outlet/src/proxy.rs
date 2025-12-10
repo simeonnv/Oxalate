@@ -72,7 +72,7 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
                         }
                     }
                 })
-                .buffer_unordered(80)
+                .buffer_unordered(5000)
                 .filter_map(|e| future::ready(e.map(|e| *e)))
                 .for_each(|e| {
                     outputs.push(e);
@@ -143,6 +143,7 @@ async fn handle_http_https_request(
     url: Url,
     global_state: &GlobalState,
 ) -> Option<Box<ProxyOutput>> {
+    // dbg!(&url);
     let res = reqwest_client
         .get(url.as_str())
         .header("machine-id", "")
@@ -181,7 +182,12 @@ async fn handle_http_https_request(
             Some(Box::new(proxy_output))
         }
         Err(err) => {
-            error!("http proxy err: {err}");
+            // let code = err.status();
+            // let is_timeout = err.is_timeout();
+            // let is_connect = err.is_connect();
+            // error!(
+            //     "http proxy err: {err}, code: {code:?}, is_timeout: {is_timeout}, is_connect: {is_connect}"
+            // );
             None
         }
     }

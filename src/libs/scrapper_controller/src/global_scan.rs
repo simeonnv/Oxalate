@@ -19,9 +19,17 @@ use crate::{
 };
 const IP_AMOUNT: u32 = 16384;
 
-#[derive(Clone, Default, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Ipv4IteratorJobGenerator {
     pub last_ip: Arc<AtomicU32>,
+}
+
+impl Default for Ipv4IteratorJobGenerator {
+    fn default() -> Self {
+        Self {
+            last_ip: Arc::new(1409286144.into()),
+        }
+    }
 }
 
 impl ScraperJobGenerator for Ipv4IteratorJobGenerator {
