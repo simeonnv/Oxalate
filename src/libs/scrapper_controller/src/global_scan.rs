@@ -17,9 +17,9 @@ use crate::{
     ProxyId,
     scrapper_controller::{HttpBasedOutput, ProxyJob, ScraperJobGenerator},
 };
-const IP_AMOUNT: u32 = 1_000;
+const IP_AMOUNT: u32 = 16384;
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct Ipv4IteratorJobGenerator {
     pub last_ip: Arc<AtomicU32>,
 }
@@ -27,15 +27,7 @@ pub struct Ipv4IteratorJobGenerator {
 impl ScraperJobGenerator for Ipv4IteratorJobGenerator {
     fn generate_new_job(&self, proxy_id: &ProxyId) -> Arc<ProxyJob> {
         let ip = self.last_ip.fetch_add(IP_AMOUNT, Ordering::Relaxed);
-        // let ip_range = Ipv4ReqRange {
-        //     from: ip,
-        //     to: ip + IP_AMOUNT,
-        //     index: 0,
-        //     port: None,
-        //     protocol: Protocol::Msp,
-        // };
 
-        // let urls = ProxyReqs::Ipv4UrlRange(ip_range);
         let mut reqs = vec![];
         for current_ip in ip..(ip + IP_AMOUNT) {
             let ipv4 = Ipv4Addr::from(current_ip);

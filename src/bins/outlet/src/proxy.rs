@@ -4,6 +4,8 @@ use crate::{GlobalState, HARVESTER_URL};
 
 use async_scoped::TokioScope;
 use craftping::tokio::ping;
+use futures::future;
+use futures::stream::{self, StreamExt};
 use futures::{FutureExt, future::join_all};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
@@ -14,7 +16,6 @@ use tokio::{
     net::TcpStream,
     time::{Instant, sleep, timeout},
 };
-use tokio_tungstenite::tungstenite::util::NonBlockingResult;
 
 pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
     tokio::spawn(async move {
@@ -53,24 +54,32 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
 
             info!("got urls!");
 
-            let request_futures = reqs.0.into_iter().map(|req: ProxyReq| {
-                global_state
-                    .request_counter
-                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let mut outputs = vec![];
+            stream::iter(reqs.0)
+                .map(|req| {
+                    global_state
+                        .request_counter
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-                async {
-                    match req {
-                        ProxyReq::Msp(e) => handle_msp_request(e.url).await,
-                        ProxyReq::Http(e) | ProxyReq::Https(e) => {
-                            handle_http_https_request(&reqwest_client, e.url, &global_state).await
+                    async {
+                        match req {
+                            ProxyReq::Msp(e) => handle_msp_request(e.url).await,
+                            ProxyReq::Http(e) | ProxyReq::Https(e) => {
+                                handle_http_https_request(&reqwest_client, e.url, &global_state)
+                                    .await
+                            }
+                            ProxyReq::Tcp(e) => todo!(),
                         }
-                        ProxyReq::Tcp(e) => todo!(),
                     }
-                }
-            });
+                })
+                .buffer_unordered(80)
+                .filter_map(|e| future::ready(e.map(|e| *e)))
+                .for_each(|e| {
+                    outputs.push(e);
+                    future::ready(())
+                })
+                .await;
 
-            let results = join_all(request_futures).await;
-            let outputs: Vec<ProxyOutput> = results.into_iter().flatten().map(|e| *e).collect();
             info!("all outputs are retrived, returning back to main scrapper server!");
 
             let req = Req::ReturnUrlOutputs(outputs);
@@ -171,6 +180,9 @@ async fn handle_http_https_request(
 
             Some(Box::new(proxy_output))
         }
-        Err(_) => None,
+        Err(err) => {
+            error!("http proxy err: {err}");
+            None
+        }
     }
 }

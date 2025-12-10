@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
@@ -29,7 +30,7 @@ pub trait ScraperJobGenerator {
     fn generate_new_job(&self, proxy_id: &ProxyId) -> Arc<ProxyJob>;
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ProxyJob {
     pub reqs: ProxyReqs,
     pub dead: AtomicBool,
@@ -64,7 +65,7 @@ pub struct MspOutput {
     pub mods: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ScrapperController {
     pub enabled: AtomicBool,
     pub proxies: DashMap<ProxyId, (JobGenerators, Option<Arc<ProxyJob>>)>,
@@ -72,7 +73,17 @@ pub struct ScrapperController {
     pub global_ip_job_generator: Ipv4IteratorJobGenerator,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+impl Default for ScrapperController {
+    fn default() -> Self {
+        Self {
+            enabled: true.into(),
+            proxies: Default::default(),
+            global_ip_job_generator: Default::default(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub enum JobGenerators {
     #[default]
     Ipv4Iterator,
@@ -124,9 +135,18 @@ impl ScrapperController {
 
     pub fn get_job(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
         if !self.enabled.load(Ordering::Relaxed) {
+            info!("didnt send job bc server is disabled");
             return None;
         }
-        let proxy = self.proxies.get(proxy_id)?;
+        let proxy = self
+            .proxies
+            .get(proxy_id)
+            .map(|e| e.value().to_owned())
+            .unwrap_or_else(|| {
+                self.register_new_proxy(proxy_id.to_owned());
+                (JobGenerators::default(), None)
+            });
+
         if let Some(proxy_job) = &proxy.1 {
             return Some(proxy_job.to_owned());
         }
@@ -140,6 +160,11 @@ impl ScrapperController {
                 Some(self.global_ip_job_generator.generate_new_job(proxy_id))
             }
         }
+    }
+
+    pub fn register_new_proxy(&self, proxy_id: ProxyId) {
+        self.proxies
+            .insert(proxy_id, (JobGenerators::default(), None));
     }
 
     pub async fn complete_job(
