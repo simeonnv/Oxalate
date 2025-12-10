@@ -155,11 +155,15 @@ impl ScrapperController {
             return Some(proxy_job);
         }
 
-        match proxy.0 {
-            JobGenerators::Ipv4Iterator => {
-                Some(self.global_ip_job_generator.generate_new_job(proxy_id))
-            }
-        }
+        let job = match proxy.0 {
+            JobGenerators::Ipv4Iterator => self.global_ip_job_generator.generate_new_job(proxy_id),
+        };
+
+        let mut proxy_ref = self.proxies.get_mut(proxy_id).unwrap();
+        let proxy_val = proxy_ref.value_mut();
+        proxy_val.1 = Some(job.to_owned());
+
+        Some(job)
     }
 
     pub fn register_new_proxy(&self, proxy_id: ProxyId) {
@@ -188,11 +192,14 @@ impl ScrapperController {
 
     pub fn find_and_reassign_dead_job(&self, proxy_id: &ProxyId) -> Option<Arc<ProxyJob>> {
         for mut v in self.proxies.iter_mut() {
-            let (_, job) = v.value_mut();
-            let job = match job {
+            let (proxy_generator, job) = v.value_mut();
+            let job = match job.to_owned() {
                 Some(e) => e,
                 None => continue,
             };
+            let proxy_generator = proxy_generator.to_owned();
+            drop(v);
+
             let now = Utc::now().naive_local();
 
             // i could replace this with a seperate funtion that runs every minute instad of having this run on every job assign
@@ -201,14 +208,21 @@ impl ScrapperController {
             }
 
             if job.dead.load(Ordering::Relaxed) {
-                *job = Arc::new(ProxyJob {
+                let new_job = Arc::new(ProxyJob {
                     reqs: job.reqs.to_owned(),
                     dead: false.into(),
                     assigned_to: proxy_id.to_owned(),
                     job_dispatched: now,
                 });
+                let old_key = job.assigned_to.to_owned();
+                drop(job);
+                self.proxies.remove(&old_key);
+                self.proxies.insert(
+                    proxy_id.to_owned(),
+                    (proxy_generator, Some(new_job.to_owned())),
+                );
 
-                return Some(job.to_owned());
+                return Some(new_job);
             }
         }
         None
