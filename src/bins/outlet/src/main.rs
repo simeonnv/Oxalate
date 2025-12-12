@@ -7,6 +7,7 @@ use std::{
     time::Duration,
 };
 
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use env_logger::Env;
 use log::{LevelFilter, info};
 use muddy::muddy;
@@ -15,6 +16,9 @@ use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
 };
+
+mod http_logger;
+pub use http_logger::init_http_logger;
 
 mod uptime_pinger;
 use tokio::time::sleep;
@@ -42,6 +46,9 @@ async fn main() {
         .filter_module("trust_dns_proto", LevelFilter::Error)
         .filter_module("trust_dns_resolver", LevelFilter::Error)
         .init();
+
+    init_http_logger(LevelFilter::Info).unwrap();
+
     info!("outlet inited with machine id: {:?}", *MACHINE_ID);
 
     let global_state = Arc::new(GlobalState {

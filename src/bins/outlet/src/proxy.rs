@@ -2,11 +2,9 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use crate::{GlobalState, HARVESTER_URL};
 
-use async_scoped::TokioScope;
 use craftping::tokio::ping;
 use futures::future;
 use futures::stream::{self, StreamExt};
-use futures::{FutureExt, future::join_all};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
 use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
@@ -14,7 +12,7 @@ use oxalate_urls::urls::ProxyReq;
 use reqwest::{Client, Url};
 use tokio::{
     net::TcpStream,
-    time::{Instant, sleep, timeout},
+    time::{sleep, timeout},
 };
 
 pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
@@ -68,11 +66,10 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
                                 handle_http_https_request(&reqwest_client, e.url, &global_state)
                                     .await
                             }
-                            ProxyReq::Tcp(e) => todo!(),
                         }
                     }
                 })
-                .buffer_unordered(5000)
+                .buffer_unordered(800)
                 .filter_map(|e| future::ready(e.map(|e| *e)))
                 .for_each(|e| {
                     outputs.push(e);
