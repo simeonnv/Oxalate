@@ -34,6 +34,9 @@ pub struct EnvVars {
     #[envconfig(from = "POSTGRES_PASSWORD")]
     pub postgres_password: String,
 
+    #[envconfig(from = "URLS_PATH")]
+    pub urls_path: PathBuf,
+
     #[envconfig(from = "DB_ADDRESS")]
     pub db_address: String,
 

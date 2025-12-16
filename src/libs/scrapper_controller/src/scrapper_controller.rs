@@ -1,6 +1,7 @@
 use crate::Error;
+use crate::FileIteratorJobGenerator;
 use crate::ProxyId;
-use crate::global_scan::Ipv4IteratorJobGenerator;
+use crate::ipv4_iterator_job_generator::Ipv4IteratorJobGenerator;
 use crate::save_proxy_outputs;
 use chrono::Duration;
 use chrono::NaiveDateTime;
@@ -15,6 +16,7 @@ use sqlx::Pool;
 use sqlx::Postgres;
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
@@ -27,7 +29,7 @@ use oxalate_kv_db::kv_db::Error as KvError;
 const SCRAPPER_STATE_KEY: &[u8; 14] = b"scrapper state";
 
 pub trait ScraperJobGenerator {
-    fn generate_new_job(&self, proxy_id: &ProxyId) -> Arc<ProxyJob>;
+    fn generate_new_job(&self, proxy_id: &ProxyId, job_size: u32) -> Option<Arc<ProxyJob>>;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -71,31 +73,30 @@ pub struct ScrapperController {
     pub proxies: DashMap<ProxyId, (JobGenerators, Option<Arc<ProxyJob>>)>,
     // generates jobs by iterating over every single possible ipv4 addr
     pub global_ip_job_generator: Ipv4IteratorJobGenerator,
-}
 
-impl Default for ScrapperController {
-    fn default() -> Self {
-        Self {
-            enabled: true.into(),
-            proxies: Default::default(),
-            global_ip_job_generator: Default::default(),
-        }
-    }
+    // generates jobs from a file
+    pub file_job_generator: FileIteratorJobGenerator,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub enum JobGenerators {
-    #[default]
     Ipv4Iterator,
+    #[default]
+    FileIterator,
 }
 
 impl ScrapperController {
-    pub fn load(kv_db: &KvDb) -> Result<Arc<Self>, Error> {
+    pub fn load(kv_db: &KvDb, path: &PathBuf) -> Result<Arc<Self>, Error> {
         let scrapper_controller = kv_db.get(SCRAPPER_STATE_KEY)?;
         let scrapper_state = match scrapper_controller {
             Some(e) => e,
             None => {
-                let scrapper_state = Self::default();
+                let scrapper_state = Self {
+                    enabled: false.into(),
+                    proxies: DashMap::new(),
+                    global_ip_job_generator: Ipv4IteratorJobGenerator::default(),
+                    file_job_generator: FileIteratorJobGenerator::new(path)?,
+                };
                 Self::save_state(&scrapper_state, kv_db)?;
                 scrapper_state
             }
@@ -156,14 +157,19 @@ impl ScrapperController {
         }
 
         let job = match proxy.0 {
-            JobGenerators::Ipv4Iterator => self.global_ip_job_generator.generate_new_job(proxy_id),
+            JobGenerators::Ipv4Iterator => self
+                .global_ip_job_generator
+                .generate_new_job(proxy_id, 10_000),
+            JobGenerators::FileIterator => {
+                self.file_job_generator.generate_new_job(proxy_id, 10_000)
+            }
         };
 
         let mut proxy_ref = self.proxies.get_mut(proxy_id).unwrap();
         let proxy_val = proxy_ref.value_mut();
-        proxy_val.1 = Some(job.to_owned());
+        proxy_val.1 = job.to_owned();
 
-        Some(job)
+        job
     }
 
     pub fn register_new_proxy(&self, proxy_id: ProxyId) {

