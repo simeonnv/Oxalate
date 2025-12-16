@@ -143,9 +143,9 @@ pub async fn save_mcp_output(
         "
             INSERT INTO MinecraftServers
                 (url, last_scanned, device_machine_id, online_when_scraped,
-                 online_players_count, max_online_players, players, description, server_version, mods)
+                 online_players_count, max_online_players, players, description, server_version, mods, ping)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             ;
         ",
         url,
@@ -158,6 +158,8 @@ pub async fn save_mcp_output(
         output.description,
         output.version,
         mods,
+        //TODO FIX
+        0_f64,
     )
     .execute(db_pool)
     .await?;

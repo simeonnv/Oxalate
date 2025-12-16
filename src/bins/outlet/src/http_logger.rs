@@ -48,9 +48,7 @@ impl Log for HttpLogger {
                 buffer.clear();
                 drop(buffer);
                 let http_client = self.http_client.to_owned();
-                println!("sending log!");
                 send_logs(buff_clone, http_client);
-                println!("sent log!");
             }
         }
     }

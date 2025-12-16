@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let kv_db = KvDb::new(&PathBuf::from("./db")).unwrap();
     let app_state_kv_db = kv_db.clone();
-    let scrapper_state = ScrapperController::load(&kv_db)?;
+    let scrapper_state = ScrapperController::load(&kv_db, &ENVVARS.urls_path)?;
     scrapper_state.enable();
 
     let app_state = AppState {
