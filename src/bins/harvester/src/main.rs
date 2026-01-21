@@ -1,16 +1,17 @@
+use crate::env::ENVVARS;
 use axum::Router;
-use env_logger::Env;
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
-use oxalate_scrapper_controller::ScrapperController;
+use oxalate_scraper_controller::ScraperController;
 use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use structured_logger::async_json::new_writer;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::trace::TraceLayer;
 
-use crate::env::ENVVARS;
-
 pub mod env;
+
+pub mod middleware;
 
 pub mod public_endpoints;
 pub use public_endpoints::public_endpoints;
@@ -24,10 +25,18 @@ pub use error::Error;
 mod create_postgres_pool;
 pub use create_postgres_pool::create_postgres_pool;
 
+pub mod save_scraper_controller;
+pub use save_scraper_controller::save_scraper_controller;
+
+pub mod load_scraper_controller;
+pub use load_scraper_controller::load_scraper_controller;
+
+pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
-    pub scrapper_state: Arc<ScrapperController>,
+    pub scraper_controller: Arc<ScraperController>,
     pub shutdown: Arc<Shutdown>,
     pub kv_db: KvDb,
 }
@@ -41,7 +50,11 @@ pub struct Shutdown {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = ENVVARS.rust_log;
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    structured_logger::Builder::with_level(&ENVVARS.rust_log)
+        .with_msg_field()
+        .with_target_writer("*", new_writer(tokio::io::stdout()))
+        .init();
+
     let db_pool = create_postgres_pool(
         &ENVVARS.postgres_user,
         &ENVVARS.postgres_password,
@@ -50,16 +63,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &ENVVARS.postgres_name,
         ENVVARS.pool_max_conn,
     )
-    .await?;
+    .await
+    .unwrap();
 
     let kv_db = KvDb::new(&PathBuf::from("./db")).unwrap();
     let app_state_kv_db = kv_db.clone();
-    let scrapper_state = ScrapperController::load(&kv_db, &ENVVARS.urls_path)?;
-    scrapper_state.enable();
+    let scraper_controller =
+        Arc::new(load_scraper_controller(&kv_db, SCRAPER_CONTROLLER_KV_KEY).unwrap());
+    scraper_controller.enable();
 
     let app_state = AppState {
         db_pool,
-        scrapper_state,
+        scraper_controller,
         shutdown: Arc::new(Shutdown::default()),
         kv_db: app_state_kv_db,
     };
@@ -73,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(async move {
         let public_listener = tokio::net::TcpListener::bind(public_addr).await.unwrap();
         let router = Router::new()
-            .merge(public_endpoints())
+            .merge(public_endpoints(&pub_app_state))
             .with_state(pub_app_state)
             .layer(TraceLayer::new_for_http());
 
@@ -93,7 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(async move {
         let private_listener = tokio::net::TcpListener::bind(private_addr).await.unwrap();
         let router = Router::new()
-            .merge(private_endpoints())
+            .merge(private_endpoints(&priv_app_state))
             .with_state(priv_app_state)
             .layer(TraceLayer::new_for_http());
         info!("private server running on {private_addr}!");
@@ -105,7 +120,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     app_state.shutdown.task_tracker.wait().await;
     info!("shutting down!");
-    let _ = app_state.scrapper_state.save_state(&kv_db);
+    let _ = save_scraper_controller(
+        &kv_db,
+        &app_state.scraper_controller,
+        SCRAPER_CONTROLLER_KV_KEY,
+    )
+    .inspect_err(|e| log::error!("failed to save scraper controller before shutdown: {:?}", e));
 
     Ok(())
 }

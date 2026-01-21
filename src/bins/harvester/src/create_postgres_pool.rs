@@ -1,7 +1,7 @@
 use log::{debug, info};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
-use crate::Error;
+use exn::Result;
 
 pub async fn create_postgres_pool(
     postgres_user: &'static str,
@@ -10,7 +10,7 @@ pub async fn create_postgres_pool(
     db_port: u16,
     postgres_name: &'static str,
     max_conn: u32,
-) -> Result<Pool<Postgres>, Error> {
+) -> Result<Pool<Postgres>, sqlx::Error> {
     let db_url: String = format!(
         "postgres://{}:{}@{}:{}/{}",
         postgres_user, postgres_password, db_address, db_port, postgres_name

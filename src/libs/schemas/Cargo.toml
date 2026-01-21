@@ -9,5 +9,4 @@ chrono = { workspace = true }
 serde = { workspace = true }
 url = { workspace = true }
 
-oxalate_scrapper_controller = { workspace = true }
-oxalate_urls = { workspace = true }
+oxalate_scraper_controller = { workspace = true }

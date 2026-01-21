@@ -1,5 +1,5 @@
 [package]
-name = "oxalate_scrapper_controller"
+name = "oxalate_scraper_controller"
 version = "0.1.0"
 edition = "2024"
 
@@ -17,8 +17,9 @@ serde_json = { workspace = true }
 utoipa = { workspace = true }
 http = { workspace = true }
 
-oxalate_urls = { workspace = true }
-oxalate_kv_db = { workspace = true }
+# oxalate_kv_db = { workspace = true }
+exn = { workspace = true }
+async-trait = { workspace = true }
 
 flate2 = "1.1.5"
-scraper = "0.24.0"
+scraper = "0.25.0"

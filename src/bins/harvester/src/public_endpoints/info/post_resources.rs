@@ -1,12 +1,14 @@
 use std::f32;
 
-use axum::{Json, extract::State, http::HeaderMap};
-use oxalate_scrapper_controller::ProxyId;
+use axum::{Extension, Json, extract::State};
+use oxalate_scraper_controller::ProxyId;
 use uuid::Uuid;
 
 use oxalate_schemas::harvester::public::info::post_resources::*;
 
 use crate::{AppState, Error};
+
+use exn::ResultExt;
 
 #[utoipa::path(
     post,
@@ -24,11 +26,10 @@ use crate::{AppState, Error};
 )]
 #[axum::debug_handler]
 pub async fn post_resources(
-    headers: HeaderMap,
+    Extension(proxy_id): Extension<ProxyId>,
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
     let id = Uuid::new_v4();
 
     sqlx::query!(
@@ -45,7 +46,8 @@ pub async fn post_resources(
         req.net_usage_bytes as i64,
     )
     .execute(&app_state.db_pool)
-    .await?;
+    .await
+    .or_raise(|| Error::Internal("".into()));
 
     Ok(())
 }
