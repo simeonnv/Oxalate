@@ -1,8 +1,8 @@
 use crate::{AppState, Error};
-use axum::{Json, extract::State, http::HeaderMap};
+use axum::{Extension, Json, extract::State, http::HeaderMap};
 
 use oxalate_schemas::harvester::public::proxy::post_proxy::*;
-use oxalate_scrapper_controller::ProxyId;
+use oxalate_scraper_controller::ProxyId;
 
 #[utoipa::path(
     post,
@@ -18,21 +18,20 @@ use oxalate_scrapper_controller::ProxyId;
 )]
 #[axum::debug_handler]
 pub async fn post_proxy(
-    headers: HeaderMap,
+    Extension(proxy_id): Extension<ProxyId>,
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<Json<Res>, Error> {
-    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
     match req {
         Req::RequestUrls => {
-            let proxy_job = app_state.scrapper_state.get_job(&proxy_id);
+            let proxy_job = app_state.scraper_controller.get_job(&proxy_id);
             // TODO fix this fucking copy
             Ok(Json(Res(proxy_job.map(|e| e.reqs.clone()))))
         }
         Req::ReturnUrlOutputs(proxy_outputs) => {
             app_state
-                .scrapper_state
-                .complete_job(&proxy_id, &proxy_outputs, app_state.db_pool)
+                .scraper_controller
+                .complete_task(&proxy_id, &proxy_outputs, &app_state.db_pool, &())
                 .await?;
 
             Ok(Json(Res(None)))

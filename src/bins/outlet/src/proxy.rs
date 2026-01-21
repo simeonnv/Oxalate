@@ -7,7 +7,7 @@ use futures::future;
 use futures::stream::{self, StreamExt};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
-use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
+use oxalate_scraper_controller::scraper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
 use oxalate_urls::urls::ProxyReq;
 use reqwest::{Client, Url};
 use tokio::{

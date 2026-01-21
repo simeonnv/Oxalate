@@ -8,7 +8,7 @@ tokio = { workspace = true }
 lazy_static = { workspace = true }
 envconfig = { workspace = true }
 dotenv = { workspace = true }
-env_logger = { workspace = true }
+structured-logger = { workspace = true }
 log = { workspace = true }
 axum = { version = "0.8.6", features = ["ws", "macros"] }
 thiserror = { workspace = true }
@@ -27,9 +27,9 @@ url = { version = "2.5.7", features = ["serde"] }
 tokio-util = { version = "0.7.17", features = ["rt"] }
 
 oxalate_schemas = { workspace = true }
-oxalate_scrapper_controller = { workspace = true }
+oxalate_scraper_controller = { workspace = true }
 oxalate_kv_db = { workspace = true }
-oxalate_urls = { workspace = true }
 
 dashmap = { workspace = true }
 tower-http = { version = "0.6.7", features = ["trace"] }
+exn = { workspace = true }

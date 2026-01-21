@@ -5,17 +5,15 @@ members = [
     "src/libs/keylogger",
     "src/libs/kv_db",
     "src/libs/schemas",
-    "src/libs/scrapper_controller",
-    "src/libs/urls",
+    "src/libs/scraper_controller",
 ]
 
 
 [workspace.dependencies]
 oxalate_keylogger = { path = "src/libs/keylogger" }
-oxalate_scrapper_controller = { path = "src/libs/scrapper_controller" }
+oxalate_scraper_controller = { path = "src/libs/scraper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
-oxalate_urls = { path = "src/libs/urls" }
 
 tokio = { version = "1.48", features = ["full"] }
 tonic-reflection = "0.14"
@@ -43,10 +41,15 @@ http = { version="1.4.0" }
 
 # logging
 log = { version = "0.4.28" }
-env_logger = { version = "0.11.8" }
-
+structured-logger = { version = "1.0.5" }
+# env_logger = { version = "0.11.8" }
+ 
 # Error
 thiserror = { version = "2.0.17" }
+exn = { version = "0.2.1" }
+
+# Macros
+async-trait = { version = "0.1.89" }
 
 # Storage
 sqlx = { version = "0.8", features = [

@@ -1,10 +1,12 @@
-use axum::{Json, extract::State, http::HeaderMap};
-use oxalate_scrapper_controller::ProxyId;
+use crate::Error;
+use axum::{Extension, Json, extract::State};
+use exn::ResultExt;
+use oxalate_scraper_controller::ProxyId;
 use uuid::Uuid;
 
 use oxalate_schemas::harvester::public::info::post_logs::*;
 
-use crate::{AppState, Error};
+use crate::AppState;
 
 #[utoipa::path(
     post,
@@ -18,12 +20,10 @@ use crate::{AppState, Error};
 )]
 #[axum::debug_handler]
 pub async fn post_logs(
-    headers: HeaderMap,
+    Extension(proxy_id): Extension<ProxyId>,
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), Error> {
-    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
-
     for log in &req.logs {
         let db_pool = app_state.db_pool.clone();
         let id = Uuid::new_v4();
@@ -39,7 +39,8 @@ pub async fn post_logs(
             proxy_id.as_ref(),
         )
         .execute(&db_pool)
-        .await?;
+        .await
+        .or_raise(|| Error::Internal("".into()))?;
     }
 
     Ok(())

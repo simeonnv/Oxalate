@@ -1,6 +1,7 @@
 use crate::{AppState, Error};
 use axum::{extract::State, http::HeaderMap};
-use oxalate_scrapper_controller::ProxyId;
+use exn::ResultExt;
+use oxalate_scraper_controller::ProxyId;
 
 #[utoipa::path(
     get,
@@ -18,7 +19,9 @@ pub async fn get_uptime(
     headers: HeaderMap,
     State(app_state): State<AppState>,
 ) -> Result<(), Error> {
-    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool).await?;
+    let proxy_id = ProxyId::from_http_headers(&headers, &app_state.db_pool)
+        .await
+        .or_raise(|| Error::BadRequest("No proxy id in header".into()))?;
 
     sqlx::query!(
         "
@@ -31,7 +34,8 @@ pub async fn get_uptime(
         proxy_id.as_ref()
     )
     .execute(&app_state.db_pool)
-    .await?;
+    .await
+    .or_raise(|| Error::Internal("".into()))?;
 
     Ok(())
 }
