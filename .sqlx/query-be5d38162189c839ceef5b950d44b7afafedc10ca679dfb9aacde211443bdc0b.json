@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO Urls\n                (url, last_scanned, device_machine_id)\n            VALUES\n                ($1, $2, $3)\n            ON CONFLICT (url) DO NOTHING;     \n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamp",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "be5d38162189c839ceef5b950d44b7afafedc10ca679dfb9aacde211443bdc0b"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO Uptime\n                (device_machine_id)\n            VALUES\n                ($1)\n            ;\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ffa09b011376e84d47fd15ff9f12d7386c1b6fc997b85794cb974cb6adb95b64"
+}
