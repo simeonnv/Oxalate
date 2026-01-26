@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
       POSTGRES_DB: ${POSTGRES_DB:-Oxalate}
     volumes:
-      - harvester_postgres_data:/var/lib/postgresql/data
+          - harvester_postgres_data:/var/lib/postgresql
     labels:
       kompose.init.containers.command: "echo Initializing harvester postgres database"
       kompose.controller.expose.port: true
