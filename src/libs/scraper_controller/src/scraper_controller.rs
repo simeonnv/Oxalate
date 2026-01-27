@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    convert::Infallible,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -17,11 +18,11 @@ use sqlx::{Pool, Postgres};
 use url::Url;
 use utoipa::ToSchema;
 
-#[async_trait(?Send)]
+#[async_trait]
 pub trait ProxyTaskGenerator<Err: exn::Error> {
-    async fn generate_task<LoggingCTX: Serialize>(
+    async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
         &mut self,
-        logging_ctx: LoggingCTX,
+        logging_ctx: &LoggingCTX,
     ) -> Result<Option<ProxyTask>, Err>;
 }
 
@@ -31,15 +32,15 @@ pub struct ScraperController {
     pub active_tasks: DashMap<ProxyId, ActiveProxyTask>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct ProxyTask(pub Box<[ProxyReq]>);
 
-#[derive(Serialize, Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub enum ProxyReq {
     HttpReq(HttpReq),
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct HttpReq {
     pub url: Url,
     pub body: String,
@@ -47,7 +48,7 @@ pub struct HttpReq {
     pub method: HttpMethod,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub enum HttpMethod {
     Get,
     Head,
@@ -100,7 +101,7 @@ impl ScraperController {
     pub async fn get_task<
         PTGError: exn::Error,
         PTG: ProxyTaskGenerator<PTGError>,
-        LoggingCTX: Serialize,
+        LoggingCTX: Serialize + Send + Sync,
     >(
         &self,
         proxy_id: &ProxyId,
@@ -204,4 +205,14 @@ pub enum Error {
 
     #[error("failed to save proxy responses")]
     FailedToSaveProxyRes,
+}
+
+#[async_trait]
+impl ProxyTaskGenerator<Infallible> for () {
+    async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
+        &mut self,
+        _logging_ctx: &LoggingCTX,
+    ) -> Result<Option<ProxyTask>, Infallible> {
+        Ok(None)
+    }
 }

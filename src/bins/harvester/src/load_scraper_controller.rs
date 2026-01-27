@@ -8,7 +8,7 @@ pub fn load_scraper_controller(
 ) -> Result<ScraperController, Error> {
     let scraper_controller = kv_db
         .get(&key)
-        .or_raise(|| Error::GetKv)?
+        .or_raise(|| Error::Load)?
         .unwrap_or_default();
 
     Ok(scraper_controller)
@@ -16,6 +16,6 @@ pub fn load_scraper_controller(
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Failed to load scraper controller from kv db")]
-    GetKv,
+    #[error("Failed to load scraper controller")]
+    Load,
 }

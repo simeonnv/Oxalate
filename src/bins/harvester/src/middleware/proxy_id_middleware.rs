@@ -1,4 +1,4 @@
-use crate::Error as HttpError;
+use crate::{Error as HttpError, middleware::logging_middleware::LoggingCTX};
 use axum::{
     debug_middleware,
     extract::{Request, State},
@@ -29,7 +29,12 @@ pub async fn proxy_id_middleware(
         .or_raise(|| Error::ProxyId)
         .or_raise(|| HttpError::BadRequest("No proxy id in header!".into()))?;
 
-    request.extensions_mut().insert(proxy_id);
+    let ext = request.extensions_mut();
+    ext.insert(proxy_id.to_owned());
+    if let Some(e) = ext.get_mut::<LoggingCTX>() {
+        e.with_mutate(|e| e.proxy_id = Some(proxy_id));
+    }
+
     let response = next.run(request).await;
 
     Ok(response)
