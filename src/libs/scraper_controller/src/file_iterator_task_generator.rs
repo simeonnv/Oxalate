@@ -46,11 +46,11 @@ impl FileIteratorTaskGenerator {
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 impl ProxyTaskGenerator<Infallible> for FileIteratorTaskGenerator {
-    async fn generate_task<LoggingCTX: Serialize>(
+    async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
         &mut self,
-        logging_ctx: LoggingCTX,
+        logging_ctx: &LoggingCTX,
     ) -> Result<Option<ProxyTask>, Infallible> {
         let urls = self.urls.pop_front();
         let urls = match urls {

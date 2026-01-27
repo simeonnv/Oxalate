@@ -47,7 +47,7 @@ pub async fn post_resources(
     )
     .execute(&app_state.db_pool)
     .await
-    .or_raise(|| Error::Internal("".into()));
+    .or_raise(|| Error::Internal("".into()))?;
 
     Ok(())
 }

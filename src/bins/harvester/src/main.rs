@@ -1,17 +1,18 @@
 use crate::env::ENVVARS;
-use axum::Router;
+use axum::{Router, middleware::from_fn_with_state};
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
 use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
-use structured_logger::async_json::new_writer;
+use structured_logger::json::new_writer;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::trace::TraceLayer;
 
 pub mod env;
 
 pub mod middleware;
+use middleware::logging_middleware::logging_middleware;
 
 pub mod public_endpoints;
 pub use public_endpoints::public_endpoints;
@@ -52,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = ENVVARS.rust_log;
     structured_logger::Builder::with_level(&ENVVARS.rust_log)
         .with_msg_field()
-        .with_target_writer("*", new_writer(tokio::io::stdout()))
+        .with_target_writer("*", new_writer(std::io::stdout()))
         .init();
 
     let db_pool = create_postgres_pool(
@@ -89,8 +90,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let public_listener = tokio::net::TcpListener::bind(public_addr).await.unwrap();
         let router = Router::new()
             .merge(public_endpoints(&pub_app_state))
-            .with_state(pub_app_state)
-            .layer(TraceLayer::new_for_http());
+            .with_state(pub_app_state.to_owned())
+            .layer(TraceLayer::new_for_http())
+            .layer(from_fn_with_state(pub_app_state, logging_middleware));
 
         info!("public server running on {public_addr}!");
         axum::serve(public_listener, router)
@@ -109,8 +111,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let private_listener = tokio::net::TcpListener::bind(private_addr).await.unwrap();
         let router = Router::new()
             .merge(private_endpoints(&priv_app_state))
-            .with_state(priv_app_state)
-            .layer(TraceLayer::new_for_http());
+            .with_state(priv_app_state.to_owned())
+            .layer(TraceLayer::new_for_http())
+            .layer(from_fn_with_state(priv_app_state, logging_middleware));
+
         info!("private server running on {private_addr}!");
         axum::serve(private_listener, router)
             .with_graceful_shutdown(shutdown_signal(priv_shutdown))
@@ -125,7 +129,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &app_state.scraper_controller,
         SCRAPER_CONTROLLER_KV_KEY,
     )
-    .inspect_err(|e| log::error!("failed to save scraper controller before shutdown: {:?}", e));
+    .unwrap();
+    // .inspect_err(|e| log::error!("failed to save scraper controller before shutdown: {:?}", e));
 
     Ok(())
 }

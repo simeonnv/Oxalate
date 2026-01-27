@@ -1,4 +1,4 @@
-use axum::{Extension, Json, extract::State, http::HeaderMap};
+use axum::{Extension, Json, extract::State};
 use oxalate_schemas::harvester::public::keylogger::post_keylogger::*;
 use oxalate_scraper_controller::ProxyId;
 
@@ -38,7 +38,7 @@ pub async fn post_keylogger(
         )
         .execute(&db_pool)
         .await
-        .or_raise(|| Error::Internal("".into()));
+        .or_raise(|| Error::Internal("".into()))?;
     }
 
     Ok(())
