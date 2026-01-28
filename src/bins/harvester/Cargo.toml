@@ -25,6 +25,8 @@ utoipa-swagger-ui = { version = "9.0.0", features = ["axum", "vendored"] }
 url = { version = "2.5.7", features = ["serde"] }
 
 tokio-util = { version = "0.7.17", features = ["rt"] }
+futures = { workspace = true }
+futures-util = { workspace = true }
 
 oxalate_schemas = { workspace = true }
 oxalate_scraper_controller = { workspace = true }
@@ -33,3 +35,4 @@ oxalate_kv_db = { workspace = true }
 dashmap = { workspace = true }
 tower-http = { version = "0.6.7", features = ["trace"] }
 exn = { workspace = true }
+rdkafka = "0.39.0"
