@@ -32,6 +32,8 @@ pub use save_scraper_controller::save_scraper_controller;
 pub mod load_scraper_controller;
 pub use load_scraper_controller::load_scraper_controller;
 
+mod kafka_logging_writer;
+
 pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
 
 #[derive(Clone)]

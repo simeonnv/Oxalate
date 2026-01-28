@@ -16,6 +16,8 @@ oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
 
 tokio = { version = "1.48", features = ["full"] }
+futures = "0.3.31"
+futures-util = "0.3.31"
 tonic-reflection = "0.14"
 prost = "0.14"
 tonic-types = "0.14"
@@ -40,7 +42,7 @@ url = { version = "2.5.7", features = ["serde"] }
 http = { version="1.4.0" }
 
 # logging
-log = { version = "0.4.28" }
+log = { version = "0.4.28", features = ["kv_serde", "serde", "kv"] }
 structured-logger = { version = "1.0.5" }
 # env_logger = { version = "0.11.8" }
  
