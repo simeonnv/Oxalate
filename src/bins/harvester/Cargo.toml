@@ -8,7 +8,6 @@ tokio = { workspace = true }
 lazy_static = { workspace = true }
 envconfig = { workspace = true }
 dotenv = { workspace = true }
-structured-logger = { workspace = true }
 log = { workspace = true }
 axum = { version = "0.8.6", features = ["ws", "macros"] }
 thiserror = { workspace = true }
@@ -36,3 +35,4 @@ dashmap = { workspace = true }
 tower-http = { version = "0.6.7", features = ["trace"] }
 exn = { workspace = true }
 rdkafka = "0.39.0"
+fern = { workspace = true }

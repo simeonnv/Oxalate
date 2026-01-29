@@ -2,26 +2,26 @@ use std::{collections::BTreeMap, io::Write, time::Duration};
 
 use log::kv::{Key, Value};
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use structured_logger::Writer;
 use tokio::{
     sync::mpsc::{self, Sender},
     task::JoinHandle,
 };
 
-pub struct KafkaLoggerWriter {
-    thread_handle: JoinHandle<()>,
-    log_tx: Sender<Box<[u8]>>,
+pub struct KafkaLogWriter {
+    pub log_tx: Sender<String>,
+    pub handle: JoinHandle<()>,
 }
 
-impl KafkaLoggerWriter {
-    pub fn new(kafka_client: FutureProducer, topic: &'static str) -> Self {
-        let (tx, mut rx) = mpsc::channel::<Box<[u8]>>(512);
+impl KafkaLogWriter {
+    pub async fn new(kafka_client: FutureProducer, topic: &'static str) -> Self {
+        let (tx, mut rx) = mpsc::channel::<String>(512);
+
         let handle = tokio::spawn(async move {
-            while let Some(data) = rx.recv().await {
+            while let Some(log) = rx.recv().await {
                 let status = kafka_client
                     .send(
                         FutureRecord::to(topic)
-                            .payload(data.as_ref())
+                            .payload(&log)
                             .key(&format!("key-{}", uuid::Uuid::new_v4())),
                         Duration::from_secs(0),
                     )
@@ -30,21 +30,19 @@ impl KafkaLoggerWriter {
             }
         });
 
-        Self {
-            thread_handle: handle,
-            log_tx: tx,
-        }
+        Self { log_tx: tx, handle }
     }
 }
 
-impl Writer for KafkaLoggerWriter {
-    fn write_log(&self, value: &BTreeMap<Key, Value>) -> Result<(), std::io::Error> {
-        let mut buf = Vec::with_capacity(256);
-        serde_json::to_writer(&mut buf, value).map_err(std::io::Error::from)?;
-        buf.write_all(b"\n")?;
+impl std::io::Write for KafkaLogWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let log_msg = String::from_utf8_lossy(buf).to_string();
+        let _ = self.log_tx.blocking_send(log_msg);
 
-        self.log_tx.blocking_send(buf.into_boxed_slice()).unwrap();
+        Ok(buf.len())
+    }
 
+    fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
     }
 }

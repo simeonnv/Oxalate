@@ -1,11 +1,12 @@
-use crate::env::ENVVARS;
+use crate::{env::ENVVARS, kafka_logging_writer::KafkaLogWriter};
 use axum::{Router, middleware::from_fn_with_state};
+use chrono::Utc;
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
+use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
-use structured_logger::json::new_writer;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::trace::TraceLayer;
 
@@ -53,10 +54,28 @@ pub struct Shutdown {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = ENVVARS.rust_log;
-    structured_logger::Builder::with_level(&ENVVARS.rust_log)
-        .with_msg_field()
-        .with_target_writer("*", new_writer(std::io::stdout()))
-        .init();
+
+    let producer: FutureProducer = ClientConfig::new()
+        .set("bootstrap.servers", "localhost:9092")
+        .set("message.timeout.ms", "5000")
+        .create()
+        .expect("Producer creation error");
+    let kafka_writer = Box::new(KafkaLogWriter::new(producer, "harvester_logs").await);
+
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {} {}] {}",
+                Utc::now().naive_local(),
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(std::io::stdout())
+        .chain(fern::Output::writer(kafka_writer, "\n"))
+        .apply()?;
 
     let db_pool = create_postgres_pool(
         &ENVVARS.postgres_user,
@@ -126,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     app_state.shutdown.task_tracker.wait().await;
     info!("shutting down!");
-    let _ = save_scraper_controller(
+    save_scraper_controller(
         &kv_db,
         &app_state.scraper_controller,
         SCRAPER_CONTROLLER_KV_KEY,
