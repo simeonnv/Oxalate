@@ -754,6 +754,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
+name = "fern"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4316185f709b23713e41e3195f90edef7fb00c3ed4adc79769cf09cc762a3b29"
+dependencies = [
+ "chrono",
+ "log",
+]
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1843,6 +1853,7 @@ dependencies = [
  "dotenv",
  "envconfig",
  "exn",
+ "fern",
  "futures",
  "futures-util",
  "lazy_static",
@@ -1855,7 +1866,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
- "structured-logger",
  "thiserror",
  "tokio",
  "tokio-util",
@@ -1913,7 +1923,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
- "structured-logger",
  "thiserror",
  "tokio",
  "url",
@@ -3066,19 +3075,6 @@ dependencies = [
  "unicode-bidi",
  "unicode-normalization",
  "unicode-properties",
-]
-
-[[package]]
-name = "structured-logger"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5e5db98a0b69a45a1f8604185fd4c2a5900b640118530b82c4ce74e12c5c9ab"
-dependencies = [
- "log",
- "parking_lot 0.12.5",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
