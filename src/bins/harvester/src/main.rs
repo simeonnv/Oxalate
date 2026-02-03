@@ -37,6 +37,9 @@ mod kafka_logging_writer;
 
 pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
 
+mod setup_logger;
+pub use setup_logger::{Error as SetupLoggerError, setup_logger};
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
@@ -55,27 +58,7 @@ pub struct Shutdown {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = ENVVARS.rust_log;
 
-    let producer: FutureProducer = ClientConfig::new()
-        .set("bootstrap.servers", "localhost:9092")
-        .set("message.timeout.ms", "5000")
-        .create()
-        .expect("Producer creation error");
-    let kafka_writer = Box::new(KafkaLogWriter::new(producer, "harvester_logs").await);
-
-    fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {} {}] {}",
-                Utc::now().naive_local(),
-                record.level(),
-                record.target(),
-                message
-            ))
-        })
-        .level(log::LevelFilter::Debug)
-        .chain(std::io::stdout())
-        .chain(fern::Output::writer(kafka_writer, "\n"))
-        .apply()?;
+    setup_logger().await.unwrap();
 
     let db_pool = create_postgres_pool(
         &ENVVARS.postgres_user,

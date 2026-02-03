@@ -34,6 +34,9 @@ pub struct EnvVars {
     #[envconfig(from = "POSTGRES_PASSWORD")]
     pub postgres_password: String,
 
+    #[envconfig(from = "POOL_MAX_CONN", default = "5")]
+    pub pool_max_conn: u32,
+
     #[envconfig(from = "URLS_PATH")]
     pub urls_path: PathBuf,
 
@@ -43,8 +46,17 @@ pub struct EnvVars {
     #[envconfig(from = "DB_PORT", default = "5432")]
     pub db_port: u16,
 
-    #[envconfig(from = "POOL_MAX_CONN", default = "5")]
-    pub pool_max_conn: u32,
+    #[envconfig(from = "KAFKA_ADDRESS")]
+    pub kafka_address: Option<IpAddr>,
+
+    #[envconfig(from = "KAFKA_PORT", default = "9092")]
+    pub kafka_port: u16,
+
+    #[envconfig(from = "KAFKA_MESSAGE_TIMEOUT_MS", default = "5000")]
+    pub kafka_message_timeout_ms: u32,
+
+    #[envconfig(from = "KAFKA_HARVESTER_LOGS_TOPIC", default = "harvester_logs")]
+    pub kafka_harvester_logs_topic: String,
 }
 
 lazy_static! {
