@@ -12,9 +12,15 @@ pub struct KafkaLogWriter {
     pub handle: JoinHandle<()>,
 }
 
+impl Drop for KafkaLogWriter {
+    fn drop(&mut self) {
+        self.handle.abort();
+    }
+}
+
 impl KafkaLogWriter {
     pub async fn new(kafka_client: FutureProducer, topic: &'static str) -> Self {
-        let (tx, mut rx) = mpsc::channel::<String>(512);
+        let (tx, mut rx) = mpsc::channel::<String>(1024);
 
         let handle = tokio::spawn(async move {
             while let Some(log) = rx.recv().await {
@@ -26,7 +32,10 @@ impl KafkaLogWriter {
                         Duration::from_secs(0),
                     )
                     .await;
-                let _ = dbg!(status);
+
+                if let Err(e) = status {
+                    eprintln!("failed sending log to kafka: {}", e.0);
+                }
             }
         });
 
@@ -37,7 +46,9 @@ impl KafkaLogWriter {
 impl std::io::Write for KafkaLogWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let log_msg = String::from_utf8_lossy(buf).to_string();
-        let _ = self.log_tx.blocking_send(log_msg);
+        if let Err(e) = self.log_tx.try_send(log_msg) {
+            eprintln!("failed sending log to kafka thread: {}", e);
+        }
 
         Ok(buf.len())
     }
