@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
       POSTGRES_DB: ${POSTGRES_DB:-Oxalate}
     volumes:
-      - harvester_postgres_data:/var/lib/postgresql/data
+          - harvester_postgres_data:/var/lib/postgresql
     labels:
       kompose.init.containers.command: "echo Initializing harvester postgres database"
       kompose.controller.expose.port: true
@@ -17,11 +17,37 @@ services:
       - app-network
     restart: unless-stopped
 
+  harvester-redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --smp 1                              
+      - --mode dev-container
+      - --default-log-level=info
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-kafka-addr internal://harvester-redpanda:9092,external://localhost:19092
+      - --advertise-pandaproxy-addr internal://harvester-redpanda:8082,external://localhost:18082
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr harvester-redpanda:33145
+    ports:
+      - "18081:18081"     # Schema Registry
+      - "18082:18082"     # HTTP Proxy
+      - "19092:19092"     # Kafka (external)
+      - "19644:9644"      # Admin API / Prometheus
+    volumes:
+      - harvester_redpanda:/var/lib/redpanda/data
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   harvester_postgres_data:
+  harvester_redpanda:
 
 # postgresql://root:root@localhost:6666/Oxalate

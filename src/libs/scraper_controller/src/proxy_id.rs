@@ -4,7 +4,7 @@ use http::HeaderMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
-use crate::Error;
+use exn::{OptionExt, Result, ResultExt};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ProxyId(String);
@@ -17,13 +17,25 @@ impl Display for ProxyId {
 
 pub const HEADER_KEY: &str = "machine-id";
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("No proxy id header")]
+    NoHeader,
+
+    #[error("No content in the proxy id header")]
+    NoHeaderContent,
+
+    #[error("Failed to query db")]
+    DBQuery,
+}
+
 impl ProxyId {
     pub async fn from_http_headers(
         headers: &HeaderMap,
         db_pool: &Pool<Postgres>,
     ) -> Result<Self, Error> {
-        let id = headers.get(HEADER_KEY).ok_or(Error::NoProxyIdHeader)?;
-        let id = id.to_str().map_err(|_| Error::ProxyIdContent)?.to_owned();
+        let id = headers.get(HEADER_KEY).ok_or_raise(|| Error::NoHeader)?;
+        let id = id.to_str().or_raise(|| Error::NoHeaderContent)?.to_owned();
 
         let device_exists = sqlx::query_scalar!(
             "
@@ -36,7 +48,8 @@ impl ProxyId {
             &id
         )
         .fetch_one(db_pool)
-        .await?
+        .await
+        .or_raise(|| Error::DBQuery)?
         .unwrap_or(false);
 
         if device_exists {
@@ -54,11 +67,16 @@ impl ProxyId {
             &id
         )
         .execute(db_pool)
-        .await?;
+        .await
+        .or_raise(|| Error::DBQuery)?;
 
         Ok(Self(id))
     }
 
+    /// .
+    /// # Safety
+    /// bro put a valid proxy id
+    /// .
     pub unsafe fn from_raw(inner: String) -> Self {
         Self(inner)
     }
