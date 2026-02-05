@@ -74,7 +74,7 @@ impl ProxyTaskGenerator<Infallible> for FileIteratorTaskGenerator {
                     method: HttpMethod::Get,
                 };
 
-                ProxyReq::HttpReq(http_req)
+                ProxyReq::Http(http_req)
             })
             .collect();
 

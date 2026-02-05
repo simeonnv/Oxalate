@@ -1,6 +1,5 @@
 use axum::{http::StatusCode, response::IntoResponse};
 use exn::Exn;
-use log::info;
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]

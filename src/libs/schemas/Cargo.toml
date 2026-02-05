@@ -7,6 +7,7 @@ edition = "2024"
 utoipa = { version = "5.4.0", features = ["chrono", "uuid", "url"] }
 chrono = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 url = { workspace = true }
 
 oxalate_scraper_controller = { workspace = true }
