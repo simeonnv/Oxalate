@@ -13,6 +13,6 @@ use crate::AppState;
     ),
     tag = "Health",
 )]
-pub fn private_endpoints() -> Router<AppState> {
+pub fn private_endpoints(_state: &AppState) -> Router<AppState> {
     Router::new().route("/ping", get(get_ping))
 }

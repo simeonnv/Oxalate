@@ -1,9 +1,8 @@
 use axum::{http::StatusCode, response::IntoResponse};
-use log::error;
-use oxalate_scrapper_controller::scrapper_controller;
+use exn::Exn;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum Error {
     #[error("Bad request: {0}")]
     BadRequest(String),
@@ -24,6 +23,16 @@ pub enum Error {
     Internal(String),
 }
 
+impl From<Exn<Error>> for Error {
+    fn from(err: Exn<Error>) -> Self {
+        let err = err.as_error();
+        // if let Error::Internal(_) = err {
+        //     info!("{:?}", err);
+        // };
+        err.to_owned()
+    }
+}
+
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         match self {
@@ -33,35 +42,6 @@ impl IntoResponse for Error {
             Self::NotFound(e) => (StatusCode::NOT_FOUND, e).into_response(),
             Self::Conflict(e) => (StatusCode::CONFLICT, e).into_response(),
             Self::Internal(e) => (StatusCode::INTERNAL_SERVER_ERROR, e).into_response(),
-        }
-    }
-}
-
-impl From<sqlx::Error> for Error {
-    fn from(err: sqlx::Error) -> Self {
-        error!("db error: {err}");
-        Self::Internal(err.to_string())
-    }
-}
-
-impl From<tokio::task::JoinError> for Error {
-    fn from(err: tokio::task::JoinError) -> Self {
-        error!("thread join error: {err}");
-        Self::Internal(err.to_string())
-    }
-}
-
-impl From<oxalate_scrapper_controller::Error> for Error {
-    fn from(err: oxalate_scrapper_controller::Error) -> Self {
-        error!("scrapper state error: {err}");
-        match err {
-            oxalate_scrapper_controller::Error::NoProxyIdHeader => {
-                Self::BadRequest("no proxy id related header!".into())
-            }
-            oxalate_scrapper_controller::Error::ProxyIdContent => {
-                Self::BadRequest("proxy id related header is empty!".into())
-            }
-            _ => Self::Internal(err.to_string()),
         }
     }
 }

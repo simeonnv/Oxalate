@@ -1,28 +1,29 @@
 [workspace]
+resolver = "3"
 members = [
     "src/bins/harvester",
     "src/bins/outlet",
     "src/libs/keylogger",
     "src/libs/kv_db",
     "src/libs/schemas",
-    "src/libs/scrapper_controller",
-    "src/libs/urls",
+    "src/libs/scraper_controller",
 ]
 
 
 [workspace.dependencies]
 oxalate_keylogger = { path = "src/libs/keylogger" }
-oxalate_scrapper_controller = { path = "src/libs/scrapper_controller" }
+oxalate_scraper_controller = { path = "src/libs/scraper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
-oxalate_urls = { path = "src/libs/urls" }
 
+# async and parr
 tokio = { version = "1.48", features = ["full"] }
-tonic-reflection = "0.14"
+futures = "0.3.31"
+futures-util = "0.3.31"
+parking_lot = { version = "0.12.5", features = ["serde"] }
+
 prost = "0.14"
-tonic-types = "0.14"
 prost-types = "0.14"
-tonic-prost = "0.14.0"
 envconfig = "0.11.0"
 lazy_static = "1.5"
 dotenv = "0.15"
@@ -42,11 +43,19 @@ url = { version = "2.5.7", features = ["serde"] }
 http = { version="1.4.0" }
 
 # logging
-log = { version = "0.4.28" }
-env_logger = { version = "0.11.8" }
+log = { version = "0.4.28", features = ["kv_serde", "serde", "kv"] }
+fern = { version = "0.7.1", features = ["chrono"] }
+log_json_serializer = { git = "https://github.com/simeonnv/log_json_serializer.git" }
 
+# env_logger = { version = "0.11.8" }
+ 
 # Error
 thiserror = { version = "2.0.17" }
+exn = { version = "0.2.1" }
+
+# Macros
+async-trait = { version = "0.1.89" }
+enum_dispatch = "0.3.13"
 
 # Storage
 sqlx = { version = "0.8", features = [

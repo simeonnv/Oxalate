@@ -2,18 +2,13 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use crate::{GlobalState, HARVESTER_URL};
 
-use craftping::tokio::ping;
 use futures::future;
 use futures::stream::{self, StreamExt};
 use log::{error, info};
 use oxalate_schemas::harvester::public::proxy::post_proxy::{Req, Res};
-use oxalate_scrapper_controller::scrapper_controller::{HttpBasedOutput, MspOutput, ProxyOutput};
-use oxalate_urls::urls::ProxyReq;
+use oxalate_scraper_controller::scraper_controller::{HttpRes, ProxyReq, ProxyRes};
 use reqwest::{Client, Url};
-use tokio::{
-    net::TcpStream,
-    time::{sleep, timeout},
-};
+use tokio::time::sleep;
 
 pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
     tokio::spawn(async move {
@@ -61,8 +56,8 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
 
                     async {
                         match req {
-                            ProxyReq::Msp(e) => handle_msp_request(e.url).await,
-                            ProxyReq::Http(e) | ProxyReq::Https(e) => {
+                            // ProxyReq::Msp(e) => handle_msp_request(e.url).await,
+                            ProxyReq::Http(e) => {
                                 handle_http_https_request(&reqwest_client, e.url, &global_state)
                                     .await
                             }
@@ -89,57 +84,57 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
     });
 }
 
-async fn handle_msp_request(url: Url) -> Option<Box<ProxyOutput>> {
-    let host = match url.host_str() {
-        Some(e) => e,
-        None => return None,
-    };
-    let port = url.port().unwrap_or(25565);
+// async fn handle_msp_request(url: Url) -> Option<Box<ProxyRes>> {
+//     let host = match url.host_str() {
+//         Some(e) => e,
+//         None => return None,
+//     };
+//     let port = url.port().unwrap_or(25565);
 
-    let mut stream = match timeout(Duration::from_secs(5), TcpStream::connect((host, port))).await {
-        Ok(Ok(e)) => e,
-        Ok(Err(err)) => {
-            error!("msp tcpstream err: {err}");
-            return None;
-        }
-        _ => return None,
-    };
+//     let mut stream = match timeout(Duration::from_secs(5), TcpStream::connect((host, port))).await {
+//         Ok(Ok(e)) => e,
+//         Ok(Err(err)) => {
+//             error!("msp tcpstream err: {err}");
+//             return None;
+//         }
+//         _ => return None,
+//     };
 
-    let mc_res = match timeout(Duration::from_secs(5), ping(&mut stream, host, port)).await {
-        Ok(Ok(e)) => e,
-        _ => return None,
-    };
-    info!("mc hit!");
+//     let mc_res = match timeout(Duration::from_secs(5), ping(&mut stream, host, port)).await {
+//         Ok(Ok(e)) => e,
+//         _ => return None,
+//     };
+//     info!("mc hit!");
 
-    let players = mc_res
-        .sample
-        .map(|e| e.iter().map(|e| e.name.to_owned()).collect());
-    let proxy_output = MspOutput {
-        url,
-        // TODO get rid of this
-        online: true,
-        online_players_count: mc_res.online_players as i64,
-        max_online_players: mc_res.max_players as i64,
-        description: mc_res
-            .description
-            .map(|e| e.to_string())
-            .unwrap_or("".into()),
-        players,
-        version: mc_res.version,
-        // TODO get rid of both of these
-        ping: 0_f64,
-        mods: None,
-    };
-    let proxy_output = ProxyOutput::Msp(proxy_output);
+//     let players = mc_res
+//         .sample
+//         .map(|e| e.iter().map(|e| e.name.to_owned()).collect());
+//     let proxy_output = MspOutput {
+//         url,
+//         // TODO get rid of this
+//         online: true,
+//         online_players_count: mc_res.online_players as i64,
+//         max_online_players: mc_res.max_players as i64,
+//         description: mc_res
+//             .description
+//             .map(|e| e.to_string())
+//             .unwrap_or("".into()),
+//         players,
+//         version: mc_res.version,
+//         // TODO get rid of both of these
+//         ping: 0_f64,
+//         mods: None,
+//     };
+//     let proxy_output = ProxyOutput::Msp(proxy_output);
 
-    Some(Box::new(proxy_output))
-}
+//     Some(Box::new(proxy_output))
+// }
 
 async fn handle_http_https_request(
     reqwest_client: &Client,
     url: Url,
     global_state: &GlobalState,
-) -> Option<Box<ProxyOutput>> {
+) -> Option<Box<ProxyRes>> {
     // dbg!(&url);
     let res = reqwest_client
         .get(url.as_str())
@@ -168,13 +163,13 @@ async fn handle_http_https_request(
                 headers.insert(key.to_string(), val.to_string());
             }
 
-            let proxy_output = HttpBasedOutput {
+            let proxy_output = HttpRes {
                 url,
                 status,
                 body,
                 headers,
             };
-            let proxy_output = ProxyOutput::HttpBased(proxy_output);
+            let proxy_output = ProxyRes::HttpRes(proxy_output);
 
             Some(Box::new(proxy_output))
         }
