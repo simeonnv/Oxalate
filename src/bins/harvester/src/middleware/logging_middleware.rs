@@ -40,7 +40,6 @@ pub struct LoggingCTXInner {
     pub path: Box<str>,
     pub req_id: Uuid,
 
-    #[serde(flatten)]
     pub proxy_id: Option<ProxyId>,
 
     pub method: Box<str>,

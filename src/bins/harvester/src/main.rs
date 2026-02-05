@@ -40,11 +40,14 @@ pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
 mod setup_logger;
 pub use setup_logger::{Error as SetupLoggerError, setup_logger};
 
+mod proxy_settings_store;
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub scraper_controller: Arc<ScraperController>,
     pub shutdown: Arc<Shutdown>,
+    pub kafka_outlet_producer: Option<FutureProducer>,
     pub kv_db: KvDb,
 }
 
@@ -77,10 +80,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(load_scraper_controller(&kv_db, SCRAPER_CONTROLLER_KV_KEY).unwrap());
     scraper_controller.enable();
 
+    let producer = ENVVARS.kafka_address.map(|e| {
+        ClientConfig::new()
+            .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))
+            .set(
+                "message.timeout.ms",
+                ENVVARS.kafka_message_timeout_ms.to_string(),
+            )
+            .create()
+            .expect("failed to connect to kafka for outlet producer")
+    });
+
     let app_state = AppState {
         db_pool,
         scraper_controller,
         shutdown: Arc::new(Shutdown::default()),
+        kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,
     };
 

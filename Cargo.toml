@@ -1,4 +1,5 @@
 [workspace]
+resolver = "3"
 members = [
     "src/bins/harvester",
     "src/bins/outlet",
@@ -15,14 +16,14 @@ oxalate_scraper_controller = { path = "src/libs/scraper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
 
+# async and parr
 tokio = { version = "1.48", features = ["full"] }
 futures = "0.3.31"
 futures-util = "0.3.31"
-tonic-reflection = "0.14"
+parking_lot = { version = "0.12.5", features = ["serde"] }
+
 prost = "0.14"
-tonic-types = "0.14"
 prost-types = "0.14"
-tonic-prost = "0.14.0"
 envconfig = "0.11.0"
 lazy_static = "1.5"
 dotenv = "0.15"
@@ -44,6 +45,8 @@ http = { version="1.4.0" }
 # logging
 log = { version = "0.4.28", features = ["kv_serde", "serde", "kv"] }
 fern = { version = "0.7.1", features = ["chrono"] }
+log_json_serializer = { git = "https://github.com/simeonnv/log_json_serializer.git" }
+
 # env_logger = { version = "0.11.8" }
  
 # Error
@@ -52,6 +55,7 @@ exn = { version = "0.2.1" }
 
 # Macros
 async-trait = { version = "0.1.89" }
+enum_dispatch = "0.3.13"
 
 # Storage
 sqlx = { version = "0.8", features = [

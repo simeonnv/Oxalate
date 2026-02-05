@@ -11,6 +11,7 @@ use crate::{ProxyId, save_proxy_outputs};
 use async_trait::async_trait;
 use chrono::{Duration, NaiveDateTime, Utc};
 use dashmap::DashMap;
+use enum_dispatch::enum_dispatch;
 use exn::*;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,7 @@ use sqlx::{Pool, Postgres};
 use url::Url;
 use utoipa::ToSchema;
 
+#[enum_dispatch]
 #[async_trait]
 pub trait ProxyTaskGenerator<Err: exn::Error> {
     async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
@@ -37,7 +39,7 @@ pub struct ProxyTask(pub Box<[ProxyReq]>);
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub enum ProxyReq {
-    HttpReq(HttpReq),
+    Http(HttpReq),
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

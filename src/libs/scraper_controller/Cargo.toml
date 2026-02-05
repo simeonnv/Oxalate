@@ -23,3 +23,4 @@ async-trait = { workspace = true }
 
 flate2 = "1.1.5"
 scraper = "0.25.0"
+enum_dispatch = { workspace = true }
