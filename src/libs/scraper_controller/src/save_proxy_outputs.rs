@@ -1,5 +1,5 @@
-use chrono::{NaiveDateTime, Utc};
-use exn::{OptionExt, Result, ResultExt, bail};
+use chrono::NaiveDateTime;
+use exn::{Result, ResultExt};
 use flate2::Compression;
 use log::{debug, info};
 use scraper::{Html, Selector};
@@ -24,7 +24,7 @@ pub async fn save_proxy_outputs<LoggingCTX: Serialize>(
     for output in proxy_res {
         match output {
             ProxyRes::HttpRes(http_based_output) => {
-                save_http_https_output(http_based_output, &db_pool, proxy_id, logging_ctx)
+                save_http_https_output(http_based_output, db_pool, proxy_id, logging_ctx)
                     .await
                     .or_raise(|| Error::FailedToHandleHttpRes)?
             } // ProxyRes::Msp(msp_output) => save_mcp_output(msp_output, &db_pool, proxy_id).await?,
@@ -50,15 +50,18 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
     }
 
     let mut urls = HashSet::new();
+    let urls_ref = &mut urls;
 
-    let keywords;
-
-    {
+    let keywords = tokio::task::block_in_place(move || {
         let html = Html::parse_document(body);
 
         let href_sel = Selector::parse(r#"a[href], area[href]"#)
             .map_err(|e| Error::HtmlParse(e.to_string()))
-            .or_raise(|| Error::HtmlExtract)?;
+            .or_raise(|| Error::HtmlExtract);
+        let href_sel = match href_sel {
+            Ok(e) => e,
+            Err(err) => return Err(err),
+        };
 
         for el in html.select(&href_sel) {
             if let Some(link) = el.value().attr("href") {
@@ -73,18 +76,18 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
                 parsed.set_query(None);
                 parsed.set_fragment(None);
 
-                urls.insert(parsed);
+                urls_ref.insert(parsed);
             }
         }
 
-        keywords = html
+        Ok(html
             .root_element()
             .text()
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
             .collect::<Vec<_>>() // collect into a Vec<&str>
-            .join(" ");
-    }
+            .join(" "))
+    })?;
 
     let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
     encoder

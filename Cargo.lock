@@ -1523,7 +1523,7 @@ dependencies = [
 [[package]]
 name = "log_json_serializer"
 version = "0.1.0"
-source = "git+https://github.com/simeonnv/log_json_serializer.git#b2af22fa14473bac767df855daf2050963a116ad"
+source = "git+https://github.com/simeonnv/log_json_serializer.git#17f001201b27e91e0787596a98ea7d2017b5e1bf"
 dependencies = [
  "log",
  "serde",
@@ -1947,6 +1947,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tokio-scoped",
  "url",
  "utoipa",
  "uuid",
@@ -3408,6 +3409,16 @@ checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls",
  "tokio",
+]
+
+[[package]]
+name = "tokio-scoped"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4beb8ba13bc53ac53ce1d52b42f02e5d8060f0f42138862869beb769722b256"
+dependencies = [
+ "tokio",
+ "tokio-stream",
 ]
 
 [[package]]
