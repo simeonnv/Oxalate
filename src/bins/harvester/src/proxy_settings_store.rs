@@ -1,18 +1,14 @@
 use std::{path::PathBuf, sync::Arc};
 
 use dashmap::DashMap;
-use enum_dispatch::enum_dispatch;
 use exn::Result;
 use exn::ResultExt;
-use oxalate_scraper_controller::{
-    FileIteratorTaskGenerator, ProxyId, scraper_controller::ProxyTaskGenerator,
-};
-use parking_lot::Mutex;
+use oxalate_scraper_controller::{FileIteratorTaskGenerator, ProxyId};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProxySettingsStore {
-    file_proxy_task_generator: Arc<Mutex<FileIteratorTaskGenerator>>,
+    file_proxy_task_generator: Arc<FileIteratorTaskGenerator>,
     settings: DashMap<ProxyId, ProxySettings>,
 }
 
@@ -28,7 +24,7 @@ impl ProxySettingsStore {
             FileIteratorTaskGenerator::new(path, 512).or_raise(|| NewError::BuildTaskGenerator)?;
 
         Ok(Self {
-            file_proxy_task_generator: Arc::new(Mutex::new(file_task_gen)),
+            file_proxy_task_generator: Arc::new(file_task_gen),
             settings: DashMap::new(),
         })
     }
@@ -65,11 +61,10 @@ impl ProxySettingsStore {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProxySettings {
-    task_generator: TaskGenerators,
+    pub task_generator: TaskGenerators,
 }
 
-#[enum_dispatch(ProxyTaskGenerator)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
-enum TaskGenerators {
-    FileIteratorTaskGenerator(Arc<Mutex<FileIteratorTaskGenerator>>),
+pub enum TaskGenerators {
+    FileIteratorTaskGenerator(Arc<FileIteratorTaskGenerator>),
 }

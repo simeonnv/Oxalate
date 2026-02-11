@@ -1,8 +1,12 @@
 use std::ops::Deref;
 
-use crate::{AppState, Error as HttpError, middleware::logging_middleware::LoggingCTX};
+use crate::{
+    AppState, Error as HttpError, middleware::logging_middleware::LoggingCTX,
+    proxy_settings_store::TaskGenerators,
+};
 use axum::{Extension, Json, extract::State};
 use exn::ResultExt;
+use log::info;
 use oxalate_schemas::harvester::public::proxy::post_proxy::*;
 use oxalate_scraper_controller::ProxyId;
 
@@ -33,18 +37,34 @@ pub async fn post_proxy(
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<Json<Res>, HttpError> {
+    let proxy_settings = app_state
+        .proxy_settings_store
+        .get_or_create_settings(proxy_id.clone());
+
     match req {
         Req::RequestUrls => {
-            let proxy_job = app_state
-                .scraper_controller
-                .get_task(&proxy_id, (), &logging_ctx)
-                .await
-                .or_raise(|| Error::ReqUrls)
-                .or_raise(|| HttpError::Internal("".into()))?;
+            info!(ctx:serde = logging_ctx; "requested proxy job, creating one");
+
+            let proxy_job = app_state.scraper_controller;
+            let proxy_job = match proxy_settings.task_generator {
+                TaskGenerators::FileIteratorTaskGenerator(file_iterator_task_generator) => {
+                    proxy_job
+                        .get_task(
+                            &proxy_id,
+                            file_iterator_task_generator.as_ref(),
+                            &logging_ctx,
+                        )
+                        .await
+                }
+            }
+            .or_raise(|| Error::ReqUrls)
+            .or_raise(|| HttpError::Internal("".into()))?;
 
             Ok(Json(Res(proxy_job.map(|e| e.deref().clone()))))
         }
         Req::ReturnUrlOutputs(proxy_outputs) => {
+            info!(ctx:serde = logging_ctx; "proxy is returning job outputs, handling task");
+
             app_state
                 .scraper_controller
                 .complete_task(&proxy_id, &proxy_outputs, &app_state.db_pool, &logging_ctx)

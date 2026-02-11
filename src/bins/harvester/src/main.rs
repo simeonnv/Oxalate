@@ -40,12 +40,14 @@ pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
 mod setup_logger;
 pub use setup_logger::{Error as SetupLoggerError, setup_logger};
 
-mod proxy_settings_store;
+pub mod proxy_settings_store;
+use proxy_settings_store::ProxySettingsStore;
 
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub scraper_controller: Arc<ScraperController>,
+    pub proxy_settings_store: ProxySettingsStore,
     pub shutdown: Arc<Shutdown>,
     pub kafka_outlet_producer: Option<FutureProducer>,
     pub kv_db: KvDb,
@@ -94,6 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_state = AppState {
         db_pool,
         scraper_controller,
+        proxy_settings_store: ProxySettingsStore::new(&ENVVARS.urls_path).unwrap(),
         shutdown: Arc::new(Shutdown::default()),
         kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,

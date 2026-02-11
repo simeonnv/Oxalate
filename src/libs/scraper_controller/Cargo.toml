@@ -21,6 +21,7 @@ tokio-scoped = { workspace = true }
 # oxalate_kv_db = { workspace = true }
 exn = { workspace = true }
 async-trait = { workspace = true }
+parking_lot = { workspace = true }
 
 flate2 = "1.1.5"
 scraper = "0.25.0"

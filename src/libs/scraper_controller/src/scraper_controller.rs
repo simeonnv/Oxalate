@@ -13,7 +13,7 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use dashmap::DashMap;
 use enum_dispatch::enum_dispatch;
 use exn::*;
-use log::{debug, info};
+use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use url::Url;
@@ -23,7 +23,7 @@ use utoipa::ToSchema;
 #[async_trait]
 pub trait ProxyTaskGenerator<Err: exn::Error> {
     async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
-        &mut self,
+        &self,
         logging_ctx: &LoggingCTX,
     ) -> Result<Option<ProxyTask>, Err>;
 }
@@ -107,12 +107,13 @@ impl ScraperController {
     >(
         &self,
         proxy_id: &ProxyId,
-        mut task_generator: PTG,
+        task_generator: &PTG,
         logging_ctx: &LoggingCTX,
     ) -> Result<Option<Arc<ProxyTask>>, Error> {
         info!(ctx:serde = logging_ctx; "starting to get task");
         if !self.enabled.load(Ordering::Relaxed) {
-            bail!(Error::ScraperIsDisabled);
+            log::debug!(ctx:serde = logging_ctx; "Not creating a task bc scraper controller is disabled");
+            return Ok(None);
         }
 
         if let Some(active_task) = self.active_tasks.get(proxy_id)
@@ -199,9 +200,6 @@ impl Default for ScraperController {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Scraper controller is disabled!")]
-    ScraperIsDisabled,
-
     #[error("Scraper constroller failed to generate a task from task generator: {0}")]
     TaskGeneratorFailed(&'static str),
 
@@ -212,9 +210,10 @@ pub enum Error {
 #[async_trait]
 impl ProxyTaskGenerator<Infallible> for () {
     async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
-        &mut self,
-        _logging_ctx: &LoggingCTX,
+        &self,
+        logging_ctx: &LoggingCTX,
     ) -> Result<Option<ProxyTask>, Infallible> {
+        error!(ctx:serde = logging_ctx; "USING UNIT PROXY TASK GENERATOR, RETURNING NONE");
         Ok(None)
     }
 }

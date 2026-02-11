@@ -1941,6 +1941,7 @@ dependencies = [
  "flate2",
  "http",
  "log",
+ "parking_lot 0.12.5",
  "scraper",
  "serde",
  "serde_json",

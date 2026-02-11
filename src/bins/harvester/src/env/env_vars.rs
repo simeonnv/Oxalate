@@ -57,6 +57,9 @@ pub struct EnvVars {
 
     #[envconfig(from = "KAFKA_HARVESTER_LOGS_TOPIC", default = "harvester_logs")]
     pub kafka_harvester_logs_topic: String,
+
+    #[envconfig(from = "URLS_FILE")]
+    pub urls_file: PathBuf,
 }
 
 lazy_static! {

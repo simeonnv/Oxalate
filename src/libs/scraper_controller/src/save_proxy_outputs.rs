@@ -80,14 +80,31 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
             }
         }
 
-        Ok(html
+        let keywords_text = html
             .root_element()
-            .text()
+            .descendants()
+            .filter(|n| {
+                !n.value()
+                    .as_element()
+                    .is_some_and(|e| e.name() == "script" || e.name() == "style")
+            })
+            .filter_map(|n| n.value().as_text())
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .collect::<Vec<_>>() // collect into a Vec<&str>
-            .join(" "))
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        Ok(keywords_text)
+
+        // Ok(html
+        //     .root_element()
+        //     .text()
+        //     .map(|t| t.trim())
+        //     .filter(|t| !t.is_empty())
+        //     .collect::<Vec<_>>() // collect into a Vec<&str>
+        //     .join(" "))
     })?;
+    info!(ctx:serde = logging_ctx; "keywords extracted, now compressing raw output");
 
     let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
     encoder

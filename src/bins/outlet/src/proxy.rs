@@ -28,6 +28,10 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
                     continue;
                 }
             };
+
+            // dbg!(res.status());
+            // return todo!();
+
             let res = match res.json::<Res>().await {
                 Ok(e) => e,
                 Err(err) => {
