@@ -1,14 +1,7 @@
-use axum::{Json, extract::State, http::HeaderMap};
-use exn::ResultExt;
+use axum::{Json, extract::State};
 use serde::Serialize;
 
-use crate::{AppState, Error as HttpError};
-
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("failed to parse scraper controller to json")]
-    JsonParse,
-}
+use crate::AppState;
 
 #[derive(Serialize)]
 pub struct Res {

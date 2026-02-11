@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse};
 use exn::Exn;
+use log::info;
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
@@ -25,11 +26,11 @@ pub enum Error {
 
 impl From<Exn<Error>> for Error {
     fn from(err: Exn<Error>) -> Self {
-        let err = err.as_error();
-        // if let Error::Internal(_) = err {
-        //     info!("{:?}", err);
-        // };
-        err.to_owned()
+        let e = err.as_error();
+        if let Error::Internal(_) = e {
+            log::error!("{:?}", err);
+        };
+        e.to_owned()
     }
 }
 

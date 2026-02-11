@@ -1,13 +1,4 @@
-use std::collections::BTreeMap;
-use std::fmt::Arguments;
-
-use chrono::Utc;
 use exn::Exn;
-use fern::FormatCallback;
-use log::Record;
-use log::kv::Key;
-use log::kv::Value;
-use log::kv::VisitSource;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 
 use crate::env::ENVVARS;
@@ -19,7 +10,7 @@ use exn::ResultExt;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("failed to setup kafka producer")]
+    #[error("failed to setup kafka producer while setting up logger")]
     Producer,
     #[error("failed to create fern logger")]
     Fern,
@@ -33,7 +24,7 @@ pub async fn setup_logger() -> Result<(), Exn<Error>> {
                 parse_log(message, record).expect("failed to serialize log into json")
             ));
         })
-        .level(log::LevelFilter::Info)
+        .level(log::LevelFilter::Debug)
         .chain(std::io::stdout());
 
     let fern = match ENVVARS.kafka_address {

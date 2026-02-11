@@ -8,6 +8,7 @@ use std::{
 
 use async_trait::async_trait;
 use log::{debug, info};
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -18,7 +19,7 @@ use exn::{Result, ResultExt};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FileIteratorTaskGenerator {
-    urls: VecDeque<Box<[Url]>>,
+    urls: Mutex<VecDeque<Box<[Url]>>>,
 }
 
 #[derive(Debug, Error)]
@@ -32,7 +33,7 @@ impl FileIteratorTaskGenerator {
         let file = fs::read_to_string(path).or_raise(|| Error::FailedToBuild)?;
         let urls = file
             .lines()
-            .filter_map(|e| Url::parse(e).ok())
+            .filter_map(|e| Url::parse(&format!("https://{e}")).ok())
             .collect::<Box<_>>();
 
         let mut queue = VecDeque::with_capacity(urls.len() / job_size);
@@ -42,17 +43,23 @@ impl FileIteratorTaskGenerator {
         }
         let queue = queue;
 
-        Ok(Self { urls: queue })
+        Ok(Self {
+            urls: Mutex::new(queue),
+        })
     }
 }
 
 #[async_trait]
 impl ProxyTaskGenerator<Infallible> for FileIteratorTaskGenerator {
     async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
-        &mut self,
+        &self,
         logging_ctx: &LoggingCTX,
     ) -> Result<Option<ProxyTask>, Infallible> {
-        let urls = self.urls.pop_front();
+        let urls = {
+            let mut guard = self.urls.lock();
+            guard.pop_front()
+        };
+
         let urls = match urls {
             Some(e) => e,
             None => {
