@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    convert::Infallible,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -110,16 +109,16 @@ impl ScraperController {
         task_generator: &PTG,
         logging_ctx: &LoggingCTX,
     ) -> Result<Option<Arc<ProxyTask>>, Error> {
-        info!(ctx:serde = logging_ctx; "starting to get task");
+        info!(ctx:serde = logging_ctx; "called get_task at scraper controller");
         if !self.enabled.load(Ordering::Relaxed) {
-            log::debug!(ctx:serde = logging_ctx; "Not creating a task bc scraper controller is disabled");
+            log::info!(ctx:serde = logging_ctx; "Not creating a task bc scraper controller is disabled");
             return Ok(None);
         }
 
         if let Some(active_task) = self.active_tasks.get(proxy_id)
             && !active_task.dead
         {
-            debug!(ctx:serde = logging_ctx; "Reusing existing active task");
+            info!(ctx:serde = logging_ctx; "Returning existing active task");
             return Ok(Some(active_task.value().task.to_owned()));
         }
 
@@ -131,7 +130,7 @@ impl ScraperController {
         let task = match task {
             Some(e) => e,
             None => {
-                debug!(ctx:serde = logging_ctx; "generator returned no task");
+                info!(ctx:serde = logging_ctx; "generator returned no task");
                 return Ok(None);
             }
         };
@@ -181,13 +180,20 @@ impl ScraperController {
         db_pool: &Pool<Postgres>,
         logging_ctx: &LoggingCTX,
     ) -> Result<(), Error> {
-        info!(ctx:serde = logging_ctx; "starting to complete task");
+        info!(ctx:serde = logging_ctx; "called complete task at scraper controller");
+
+        if self.active_tasks.get(proxy_id).is_none() {
+            info!(ctx:serde = logging_ctx; "A proxy tried to send a task output without having a task assigned");
+            return Ok(());
+        }
 
         save_proxy_outputs(proxy_id, proxy_res, db_pool, logging_ctx)
             .await
             .or_raise(|| Error::FailedToSaveProxyRes)?;
 
-        info!(ctx:serde = logging_ctx; "saved and completed task");
+        self.active_tasks.remove(proxy_id);
+
+        info!(ctx:serde = logging_ctx; "completed and saved task");
         Ok(())
     }
 }
@@ -207,13 +213,13 @@ pub enum Error {
     FailedToSaveProxyRes,
 }
 
-#[async_trait]
-impl ProxyTaskGenerator<Infallible> for () {
-    async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
-        &self,
-        logging_ctx: &LoggingCTX,
-    ) -> Result<Option<ProxyTask>, Infallible> {
-        error!(ctx:serde = logging_ctx; "USING UNIT PROXY TASK GENERATOR, RETURNING NONE");
-        Ok(None)
-    }
-}
+// #[async_trait]
+// impl ProxyTaskGenerator<Infallible> for () {
+//     async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
+//         &self,
+//         logging_ctx: &LoggingCTX,
+//     ) -> Result<Option<ProxyTask>, Infallible> {
+//         error!(ctx:serde = logging_ctx; "USING UNIT PROXY TASK GENERATOR, RETURNING NONE");
+//         Ok(None)
+//     }
+// }

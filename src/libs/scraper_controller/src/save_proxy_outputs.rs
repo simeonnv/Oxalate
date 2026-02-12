@@ -40,12 +40,12 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
     proxy_id: &ProxyId,
     logging_ctx: &LoggingCTX,
 ) -> Result<(), Error> {
-    info!(ctx:serde = logging_ctx; "starting to save proxy http res");
+    // info!(ctx:serde = logging_ctx; "starting to save proxy http res");
     let body = &output.body;
 
     // TODO handle empty bodies by not extracting keywords
     if body.is_empty() {
-        debug!(ctx:serde = logging_ctx; "http res body is empty; returning early");
+        // debug!(ctx:serde = logging_ctx; "http res body is empty; returning early");
         return Ok(());
     }
 
@@ -80,21 +80,63 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
             }
         }
 
-        let keywords_text = html
-            .root_element()
-            .descendants()
-            .filter(|n| {
-                !n.value()
-                    .as_element()
-                    .is_some_and(|e| e.name() == "script" || e.name() == "style")
-            })
-            .filter_map(|n| n.value().as_text())
-            .map(|t| t.trim())
-            .filter(|t| !t.is_empty())
-            .collect::<Vec<_>>()
-            .join(" ");
+        let mut text_parts = Vec::new();
+        let root = html.root_element();
 
+        fn extract_text(element: scraper::ElementRef, buffer: &mut Vec<String>) {
+            for node in element.children() {
+                if let Some(child_el) = scraper::ElementRef::wrap(node) {
+                    let tag = child_el.value().name();
+                    if matches!(
+                        tag,
+                        "script"
+                            | "style"
+                            | "svg"
+                            | "head"
+                            | "noscript"
+                            | "iframe"
+                            | "object"
+                            | "embed"
+                            | "template"
+                            | "code"
+                            | "pre"
+                    ) {
+                        continue;
+                    }
+
+                    extract_text(child_el, buffer);
+                } else if let Some(text) = node.value().as_text() {
+                    let t = text.trim();
+                    if !t.is_empty() {
+                        buffer.push(t.to_string());
+                    }
+                }
+            }
+        }
+
+        extract_text(root, &mut text_parts);
+        let keywords_text = text_parts.join(" ");
         Ok(keywords_text)
+
+        // let keywords_text = html
+        //     .root_element()
+        //     .descendants()
+        //     .filter(|n| {
+        //         !n.value().as_element().is_some_and(|e| {
+        //             e.name() == "script"
+        //                 || e.name() == "style"
+        //                 || e.name() == "svg"
+        //                 || e.name() == "path"
+        //                 || e.name() == "g"
+        //         })
+        //     })
+        //     .filter_map(|n| n.value().as_text())
+        //     .map(|t| t.trim())
+        //     .filter(|t| !t.is_empty())
+        //     .collect::<Vec<_>>()
+        //     .join(" ");
+
+        // Ok(keywords_text)
 
         // Ok(html
         //     .root_element()
@@ -104,7 +146,7 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
         //     .collect::<Vec<_>>() // collect into a Vec<&str>
         //     .join(" "))
     })?;
-    info!(ctx:serde = logging_ctx; "keywords extracted, now compressing raw output");
+    // info!(ctx:serde = logging_ctx; "keywords extracted, now compressing raw output");
 
     let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::best());
     encoder
@@ -152,7 +194,7 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
         .or_raise(|| Error::DBQuery)?;
     }
 
-    info!(ctx:serde = logging_ctx; "successfully saved proxy http res");
+    // info!(ctx:serde = logging_ctx; "successfully saved proxy http res");
     Ok(())
 }
 

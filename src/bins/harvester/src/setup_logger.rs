@@ -24,7 +24,7 @@ pub async fn setup_logger() -> Result<(), Exn<Error>> {
                 parse_log(message, record).expect("failed to serialize log into json")
             ));
         })
-        .level(log::LevelFilter::Debug)
+        .level(log::LevelFilter::Info)
         .chain(std::io::stdout());
 
     let fern = match ENVVARS.kafka_address {

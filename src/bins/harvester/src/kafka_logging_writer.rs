@@ -3,12 +3,12 @@ use std::{collections::BTreeMap, io::Write, time::Duration};
 use log::kv::{Key, Value};
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use tokio::{
-    sync::mpsc::{self, Sender},
+    sync::mpsc::{self, Sender, UnboundedSender},
     task::JoinHandle,
 };
 
 pub struct KafkaLogWriter {
-    pub log_tx: Sender<String>,
+    pub log_tx: UnboundedSender<String>,
     pub handle: JoinHandle<()>,
 }
 
@@ -20,7 +20,7 @@ impl Drop for KafkaLogWriter {
 
 impl KafkaLogWriter {
     pub async fn new(kafka_client: FutureProducer, topic: &'static str) -> Self {
-        let (tx, mut rx) = mpsc::channel::<String>(1024);
+        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
         let handle = tokio::spawn(async move {
             while let Some(log) = rx.recv().await {
@@ -46,7 +46,7 @@ impl KafkaLogWriter {
 impl std::io::Write for KafkaLogWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let log_msg = String::from_utf8_lossy(buf).to_string();
-        if let Err(e) = self.log_tx.try_send(log_msg) {
+        if let Err(e) = self.log_tx.send(log_msg) {
             eprintln!("failed sending log to kafka thread: {}", e);
         }
 

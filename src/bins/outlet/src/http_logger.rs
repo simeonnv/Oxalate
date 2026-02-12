@@ -7,7 +7,7 @@ use reqwest::{
 };
 use serde_json::Value;
 use tokio::{
-    sync::mpsc::{Sender, channel},
+    sync::mpsc::{Sender, UnboundedSender, channel, unbounded_channel},
     task::JoinHandle,
 };
 
@@ -17,8 +17,14 @@ const LOG_BUFFER_AMOUNT: usize = 32;
 
 pub struct HttpLogger {
     http_client: Client,
-    pub tx: Sender<Value>,
+    pub tx: UnboundedSender<Value>,
     handle: JoinHandle<()>,
+}
+
+impl Drop for HttpLogger {
+    fn drop(&mut self) {
+        self.handle.abort();
+    }
 }
 
 impl HttpLogger {
@@ -27,7 +33,7 @@ impl HttpLogger {
         headers.insert("machine-id", HeaderValue::from_str(&MACHINE_ID).unwrap());
         let http_client = Client::builder().default_headers(headers).build().unwrap();
 
-        let (tx, mut rx) = channel(512);
+        let (tx, mut rx) = unbounded_channel();
 
         let client = http_client.to_owned();
         let handle = tokio::spawn(async move {
@@ -72,7 +78,7 @@ impl Write for HttpLogger {
                 return Ok(0);
             }
         };
-        if let Err(e) = self.tx.try_send(log) {
+        if let Err(e) = self.tx.send(log) {
             eprintln!("Failed to send log to http logging thread: {}", e);
         }
 
