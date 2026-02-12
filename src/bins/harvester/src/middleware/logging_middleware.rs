@@ -88,10 +88,10 @@ pub async fn logging_middleware(
 
     let response = next.run(request).await;
 
-    log::info!(ctx:serde = logging_ctx; "request start");
+    // log::info!(ctx:serde = logging_ctx; "request start");
     let status = response.status().as_u16();
     logging_ctx.with_mutate(|e| e.status = Some(status));
-    log::info!(ctx:serde = logging_ctx; "request end");
+    // log::info!(ctx:serde = logging_ctx; "request end");
 
     Ok(response)
 }
