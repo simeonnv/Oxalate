@@ -9,18 +9,20 @@ lazy_static = { workspace = true }
 envconfig = { workspace = true }
 dotenv = { workspace = true }
 log = { workspace = true }
-axum = { version = "0.8.6", features = ["ws", "macros"] }
+axum = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 bincode = { version = "2.0.1", features = ["derive", "serde"] }
 prost.workspace = true
-serde_json = "1.0.145"
+serde_json = { workspace = true }
 chrono = { workspace = true }
 sqlx = { workspace = true }
 uuid = { workspace = true }
+http_error = { workspace = true }
+
 
 utoipa = { workspace = true }
-utoipa-swagger-ui = { version = "9.0.0", features = ["axum", "vendored"] }
+utoipa-swagger-ui = { workspace = true }
 url = { version = "2.5.7", features = ["serde"] }
 
 tokio-util = { version = "0.7.17", features = ["rt"] }
@@ -34,7 +36,7 @@ oxalate_kv_db = { workspace = true }
 dashmap = { workspace = true }
 tower-http = { version = "0.6.7", features = ["trace"] }
 exn = { workspace = true }
-rdkafka = "0.39.0"
+rdkafka = { workspace = true }
 fern = { workspace = true }
 
 log_json_serializer = { workspace = true }

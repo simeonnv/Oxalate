@@ -21,9 +21,6 @@ pub use public_endpoints::public_endpoints;
 pub mod private_endpoints;
 pub use private_endpoints::private_endpoints;
 
-mod error;
-pub use error::Error;
-
 mod create_postgres_pool;
 pub use create_postgres_pool::create_postgres_pool;
 
@@ -82,6 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(load_scraper_controller(&kv_db, SCRAPER_CONTROLLER_KV_KEY).unwrap());
     scraper_controller.enable();
 
+    // TODO in the log creation logic i create a kafka client, so there are 2 kafka clients and 2 pools -> make it 1
     let producer = ENVVARS.kafka_address.map(|e| {
         ClientConfig::new()
             .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))

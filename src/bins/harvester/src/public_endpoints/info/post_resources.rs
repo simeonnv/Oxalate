@@ -6,7 +6,8 @@ use uuid::Uuid;
 
 use oxalate_schemas::harvester::public::info::post_resources::*;
 
-use crate::{AppState, Error};
+use crate::AppState;
+use http_error::HttpError;
 
 use exn::ResultExt;
 
@@ -29,7 +30,7 @@ pub async fn post_resources(
     Extension(proxy_id): Extension<ProxyId>,
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
-) -> Result<(), Error> {
+) -> Result<(), HttpError> {
     let id = Uuid::new_v4();
 
     sqlx::query!(
@@ -47,7 +48,7 @@ pub async fn post_resources(
     )
     .execute(&app_state.db_pool)
     .await
-    .or_raise(|| Error::Internal("".into()))?;
+    .or_raise(|| HttpError::Internal("".into()))?;
 
     Ok(())
 }

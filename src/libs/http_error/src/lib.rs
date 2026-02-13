@@ -1,9 +1,11 @@
+use std::ops::Deref;
+
 use axum::{http::StatusCode, response::IntoResponse};
 use exn::Exn;
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
-pub enum Error {
+pub enum HttpError {
     #[error("Bad request: {0}")]
     BadRequest(String),
 
@@ -19,21 +21,23 @@ pub enum Error {
     #[error("Conflict: {0}")]
     Conflict(String),
 
-    #[error("Internal server error: {0}")]
+    #[error("Internal: {0}")]
     Internal(String),
 }
 
-impl From<Exn<Error>> for Error {
-    fn from(err: Exn<Error>) -> Self {
-        let e = err.as_error();
-        if let Error::Internal(_) = e {
+impl From<Exn<HttpError>> for HttpError {
+    fn from(err: Exn<HttpError>) -> Self {
+        let e = err.deref();
+        if let HttpError::Internal(_) = e {
             log::error!("{:?}", err);
+        } else {
+            log::debug!("{:?}", err);
         };
         e.to_owned()
     }
 }
 
-impl IntoResponse for Error {
+impl IntoResponse for HttpError {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::BadRequest(e) => (StatusCode::BAD_REQUEST, e).into_response(),

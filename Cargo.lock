@@ -756,9 +756,9 @@ dependencies = [
 
 [[package]]
 name = "exn"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bad13781b9dd97d4489a74e38bb913254d2877840b0b8dece279193761f1d50f"
+checksum = "5ca6badeb8a07b76663c7d7cb0903c1cc40c38d6fc06d3a2206780c63e8b9496"
 
 [[package]]
 name = "fastrand"
@@ -1142,6 +1142,16 @@ dependencies = [
  "http",
  "http-body",
  "pin-project-lite",
+]
+
+[[package]]
+name = "http_error"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "exn",
+ "log",
+ "thiserror",
 ]
 
 [[package]]
@@ -1874,6 +1884,7 @@ dependencies = [
  "fern",
  "futures",
  "futures-util",
+ "http_error",
  "lazy_static",
  "log",
  "log_json_serializer",
@@ -1891,6 +1902,28 @@ dependencies = [
  "tokio-util",
  "tower-http",
  "url",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "uuid",
+]
+
+[[package]]
+name = "oxalate_indexer"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "dotenv",
+ "envconfig",
+ "exn",
+ "lazy_static",
+ "log",
+ "rdkafka",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",

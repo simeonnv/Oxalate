@@ -1,11 +1,11 @@
 use std::ops::Deref;
 
 use crate::{
-    AppState, Error as HttpError, middleware::logging_middleware::LoggingCTX,
-    proxy_settings_store::TaskGenerators,
+    AppState, middleware::logging_middleware::LoggingCTX, proxy_settings_store::TaskGenerators,
 };
 use axum::{Extension, Json, extract::State};
 use exn::ResultExt;
+use http_error::HttpError;
 use log::info;
 use oxalate_schemas::harvester::public::proxy::post_proxy::*;
 use oxalate_scraper_controller::ProxyId;
