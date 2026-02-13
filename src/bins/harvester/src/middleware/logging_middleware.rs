@@ -1,6 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use crate::Error as HttpError;
 use axum::{
     debug_middleware,
     extract::{MatchedPath, Request, State},
@@ -8,6 +7,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use http_error::HttpError;
 use oxalate_scraper_controller::ProxyId;
 use serde::{Serialize, Serializer};
 use uuid::Uuid;

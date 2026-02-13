@@ -1,4 +1,4 @@
-use crate::{Error as HttpError, middleware::logging_middleware::LoggingCTX};
+use crate::middleware::logging_middleware::LoggingCTX;
 use axum::{
     debug_middleware,
     extract::{Request, State},
@@ -7,6 +7,7 @@ use axum::{
     response::Response,
 };
 use exn::ResultExt;
+use http_error::HttpError;
 use oxalate_scraper_controller::ProxyId;
 
 use crate::AppState;

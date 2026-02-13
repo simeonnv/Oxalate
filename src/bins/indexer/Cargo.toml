@@ -1,0 +1,22 @@
+[package]
+name = "oxalate_indexer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+lazy_static = { workspace = true }
+envconfig = { workspace = true }
+dotenv = { workspace = true }
+log = { workspace = true }
+axum = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+sqlx = { workspace = true }
+uuid = { workspace = true }
+exn = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+rdkafka = { workspace = true }

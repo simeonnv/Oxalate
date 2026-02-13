@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use crate::Error;
 use axum::{Extension, Json, extract::State};
 use exn::ResultExt;
+use http_error::HttpError;
 use log::error;
 use oxalate_scraper_controller::ProxyId;
 use rdkafka::producer::FutureRecord;
@@ -27,7 +27,7 @@ pub async fn post_logs(
     Extension(proxy_id): Extension<ProxyId>,
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
-) -> Result<(), Error> {
+) -> Result<(), HttpError> {
     for log in &req.logs {
         let db_pool = app_state.db_pool.clone();
         let id = Uuid::new_v4();
@@ -43,7 +43,7 @@ pub async fn post_logs(
         )
         .execute(&db_pool)
         .await
-        .or_raise(|| Error::Internal("".into()))?;
+        .or_raise(|| HttpError::Internal("".into()))?;
 
         // TODO fix this mess
         if let Some(ref producer) = app_state.kafka_outlet_producer

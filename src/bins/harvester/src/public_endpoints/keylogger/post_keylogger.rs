@@ -2,8 +2,9 @@ use axum::{Extension, Json, extract::State};
 use oxalate_schemas::harvester::public::keylogger::post_keylogger::*;
 use oxalate_scraper_controller::ProxyId;
 
-use crate::{AppState, Error};
+use crate::AppState;
 use exn::ResultExt;
+use http_error::HttpError;
 
 #[utoipa::path(
     post,
@@ -22,7 +23,7 @@ pub async fn post_keylogger(
     Extension(proxy_id): Extension<ProxyId>,
     State(app_state): State<AppState>,
     Json(req): Json<Req>,
-) -> Result<(), Error> {
+) -> Result<(), HttpError> {
     for key in req.0.iter() {
         let db_pool = app_state.db_pool.clone();
         sqlx::query!(
@@ -38,7 +39,7 @@ pub async fn post_keylogger(
         )
         .execute(&db_pool)
         .await
-        .or_raise(|| Error::Internal("".into()))?;
+        .or_raise(|| HttpError::Internal("".into()))?;
     }
 
     Ok(())

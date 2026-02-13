@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    error::Error as StdError,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -20,7 +21,7 @@ use utoipa::ToSchema;
 
 #[enum_dispatch]
 #[async_trait]
-pub trait ProxyTaskGenerator<Err: exn::Error> {
+pub trait ProxyTaskGenerator<Err: StdError + Send + Sync + 'static> {
     async fn generate_task<LoggingCTX: Serialize + Send + Sync>(
         &self,
         logging_ctx: &LoggingCTX,
@@ -100,7 +101,7 @@ impl ScraperController {
     }
 
     pub async fn get_task<
-        PTGError: exn::Error,
+        PTGError: StdError + Send + Sync + 'static,
         PTG: ProxyTaskGenerator<PTGError>,
         LoggingCTX: Serialize + Send + Sync,
     >(

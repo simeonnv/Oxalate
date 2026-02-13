@@ -12,12 +12,12 @@ pub fn load_env_vars() -> EnvVars {
     };
 
     if let Err(e) = dotenv::from_path(env_path) {
-        panic!("Failed to load {} file: {}", env_path.display(), e);
+        eprintln!("Failed to load {} file: {}", env_path.display(), e);
     }
 
     let env_vars = EnvVars::init_from_env();
     match env_vars {
         Ok(e) => e,
-        Err(e) => panic!("failed to serialize .env: {}", e),
+        Err(e) => panic!("failed to load env vars: {}", e),
     }
 }
