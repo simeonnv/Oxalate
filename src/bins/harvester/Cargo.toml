@@ -42,3 +42,5 @@ fern = { workspace = true }
 log_json_serializer = { workspace = true }
 enum_dispatch = { workspace = true }
 parking_lot = { workspace = true }
+
+kafka_writer_rs = { workspace = true }

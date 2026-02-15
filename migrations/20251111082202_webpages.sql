@@ -1,3 +1,10 @@
+-- bm25createindex(
+--   tablename TEXT,
+--   columnname TEXT,
+--   algo TEXT DEFAULT '',
+--   stopwordslanguage TEXT DEFAULT '')
+-- RETURNS VOID
+
 CREATE TABLE IF NOT EXISTS Webpages (
     -- id UUID PRIMARY KEY,
     url TEXT PRIMARY KEY,

@@ -1,4 +1,4 @@
-use crate::{env::ENVVARS, kafka_logging_writer::KafkaLogWriter};
+use crate::env::ENVVARS;
 use axum::{Router, middleware::from_fn_with_state};
 use chrono::Utc;
 use log::info;
@@ -29,8 +29,6 @@ pub use save_scraper_controller::save_scraper_controller;
 
 pub mod load_scraper_controller;
 pub use load_scraper_controller::load_scraper_controller;
-
-mod kafka_logging_writer;
 
 pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
 
@@ -94,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_state = AppState {
         db_pool,
         scraper_controller,
-        proxy_settings_store: ProxySettingsStore::new(&ENVVARS.urls_path).unwrap(),
+        proxy_settings_store: ProxySettingsStore::new(&ENVVARS.urls_file).unwrap(),
         shutdown: Arc::new(Shutdown::default()),
         kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,

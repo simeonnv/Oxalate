@@ -20,3 +20,9 @@ exn = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 rdkafka = { workspace = true }
+http_error = { workspace = true }
+oxalate_schemas = { workspace = true }
+url = { workspace = true }
+fern = { workspace = true }
+log_json_serializer = { workspace = true }
+kafka_writer_rs = { workspace = true }
