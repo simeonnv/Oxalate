@@ -1444,6 +1444,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kafka_writer_rs"
+version = "0.1.0"
+source = "git+https://github.com/simeonnv/kafka_writer_rs.git#d30fb68e5138131ba3f073f8c20134ec0e1420e8"
+dependencies = [
+ "rdkafka",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1885,6 +1895,7 @@ dependencies = [
  "futures",
  "futures-util",
  "http_error",
+ "kafka_writer_rs",
  "lazy_static",
  "log",
  "log_json_serializer",
@@ -1916,14 +1927,20 @@ dependencies = [
  "dotenv",
  "envconfig",
  "exn",
+ "fern",
+ "http_error",
+ "kafka_writer_rs",
  "lazy_static",
  "log",
+ "log_json_serializer",
+ "oxalate_schemas",
  "rdkafka",
  "serde",
  "serde_json",
  "sqlx",
  "thiserror",
  "tokio",
+ "url",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",

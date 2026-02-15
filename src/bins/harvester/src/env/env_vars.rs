@@ -37,9 +37,6 @@ pub struct EnvVars {
     #[envconfig(from = "POOL_MAX_CONN", default = "5")]
     pub pool_max_conn: u32,
 
-    #[envconfig(from = "URLS_PATH")]
-    pub urls_path: PathBuf,
-
     #[envconfig(from = "DB_ADDRESS")]
     pub db_address: String,
 

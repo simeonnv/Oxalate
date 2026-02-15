@@ -1,8 +1,8 @@
 use exn::Exn;
+use kafka_writer_rs::KafkaLogWriter;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 
 use crate::env::ENVVARS;
-use crate::kafka_logging_writer::KafkaLogWriter;
 
 use log_json_serializer::parse_log;
 
