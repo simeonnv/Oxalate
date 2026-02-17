@@ -1940,6 +1940,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower-http",
  "url",
  "utoipa",
  "utoipa-swagger-ui",

@@ -28,7 +28,6 @@ parking_lot = { version = "0.12.5", features = ["serde"] }
 tokio-scoped = "0.2.0"
 
 prost = "0.14"
-prost-types = "0.14"
 envconfig = "0.11.0"
 lazy_static = "1.5"
 dotenv = "0.15"

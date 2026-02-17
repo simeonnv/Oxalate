@@ -1,10 +1,11 @@
 use std::fmt;
 
-use axum::Router;
+use axum::{Router, http::Method};
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
+use tower_http::cors::{self, AllowMethods, Any, CorsLayer};
 
 use crate::env::ENVVARS;
 
@@ -13,6 +14,7 @@ pub mod endpoints;
 pub mod env;
 
 mod create_postgres_pool;
+
 pub use create_postgres_pool::create_postgres_pool;
 
 #[derive(Clone)]
@@ -91,8 +93,15 @@ async fn main() {
         kafka_producer_client: client,
     };
 
+    // DEVELOPMENT ONLY
+    let cors = cors::CorsLayer::new()
+        .allow_methods(Any)
+        .allow_origin(Any)
+        .allow_headers(Any);
+
     let app = Router::new()
         .merge(endpoints::endpoints(&state))
+        .layer(cors)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(format!(
