@@ -1,5 +1,5 @@
 <template>
   <div class="h-screen w-full">
-    <RouterView />
+    <NuxtPage />
   </div>
 </template>

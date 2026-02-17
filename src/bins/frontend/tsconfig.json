@@ -1,18 +1,31 @@
 {
   // https://nuxt.com/docs/guide/concepts/typescript
   "files": [],
+
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve", // This is vital for Vue SFCs
+    "jsxImportSource": "vue",
+    "allowJs": true,
+    "strict": true,
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [
     {
-      "path": "./.nuxt/tsconfig.app.json"
+      "path": "./.nuxt/tsconfig.app.json",
     },
     {
-      "path": "./.nuxt/tsconfig.server.json"
+      "path": "./.nuxt/tsconfig.server.json",
     },
     {
-      "path": "./.nuxt/tsconfig.shared.json"
+      "path": "./.nuxt/tsconfig.shared.json",
     },
     {
-      "path": "./.nuxt/tsconfig.node.json"
-    }
-  ]
+      "path": "./.nuxt/tsconfig.node.json",
+    },
+  ],
+
+  "plugins": [{ "name": "@vue/typescript-plugin" }],
 }
