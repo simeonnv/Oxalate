@@ -8,7 +8,7 @@ pub struct EnvVars {
     pub rust_log: String,
 
     #[envconfig(from = "INDEXER_ADDRESS", default = "0.0.0.0")]
-    pub indexer_address: IpAddr,
+    pub indexer_address: String,
 
     #[envconfig(from = "INDEXER_PORT", default = "22267")]
     pub indexer_port: u16,
@@ -32,7 +32,7 @@ pub struct EnvVars {
     pub db_port: u16,
 
     #[envconfig(from = "KAFKA_ADDRESS")]
-    pub kafka_address: Option<IpAddr>,
+    pub kafka_address: Option<String>,
 
     #[envconfig(from = "KAFKA_PORT", default = "9092")]
     pub kafka_port: u16,
@@ -40,8 +40,8 @@ pub struct EnvVars {
     #[envconfig(from = "KAFKA_MESSAGE_TIMEOUT_MS", default = "5000")]
     pub kafka_message_timeout_ms: u32,
 
-    #[envconfig(from = "KAFKA_OUTLET_LOGS_TOPIC", default = "harvester_logs")]
-    pub kafka_harvester_logs_topic: String,
+    #[envconfig(from = "KAFKA_LOGS_TOPIC", default = "indexer_logs")]
+    pub kafka_logs_topic: String,
 }
 
 pub fn load_env_vars() -> EnvVars {
