@@ -38,7 +38,7 @@ impl fmt::Debug for AppState {
 async fn main() {
     let _ = ENVVARS.rust_log;
 
-    let client: Option<FutureProducer> = ENVVARS.kafka_address.map(|e| {
+    let client: Option<FutureProducer> = ENVVARS.kafka_address.as_ref().map(|e| {
         let client = ClientConfig::new()
             .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))
             .set(
@@ -64,8 +64,7 @@ async fn main() {
         match client {
             Some(ref client) => {
                 let kafka_writer = Box::new(
-                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_harvester_logs_topic)
-                        .await,
+                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_logs_topic).await,
                 );
 
                 fern.chain(fern::Output::writer(kafka_writer, "\n"))
