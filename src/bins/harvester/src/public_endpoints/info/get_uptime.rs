@@ -1,5 +1,12 @@
-use crate::AppState;
-use axum::{extract::State, http::HeaderMap};
+use std::net::SocketAddr;
+
+use crate::{AppState, middleware::logging_middleware::LoggingCTX};
+use axum::{
+    Extension,
+    extract::{ConnectInfo, State, WebSocketUpgrade, ws::WebSocket},
+    http::HeaderMap,
+    response::IntoResponse,
+};
 use exn::ResultExt;
 use http_error::HttpError;
 use oxalate_scraper_controller::ProxyId;
@@ -39,4 +46,22 @@ pub async fn get_uptime(
     .or_raise(|| HttpError::Internal("".into()))?;
 
     Ok(())
+}
+
+pub async fn ws_uptime(
+    ws: WebSocketUpgrade,
+    Extension(proxy_id): Extension<ProxyId>,
+    Extension(logging_ctx): Extension<LoggingCTX>,
+    // ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| ws_uptime_task(socket, logging_ctx))
+}
+
+pub async fn ws_uptime_task(mut socket: WebSocket, logging_ctx: LoggingCTX) {
+    while let Some(msg) = socket.recv().await {
+        let msg = match msg {
+            Ok(e) => e,
+            _ => return,
+        };
+    }
 }

@@ -9,6 +9,7 @@ mod api_docs;
 pub use api_docs::ApiDoc;
 
 mod metric;
+pub use metric::metric;
 
 mod control;
 
@@ -18,5 +19,6 @@ pub fn private_endpoints(_state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/ping", get(get_ping))
         .nest("/control", control(_state))
+        .nest("/metric", metric(_state))
         .merge(SwaggerUi::new("/swagger").url("/api-docs/openapi.json", ApiDoc::openapi()))
 }

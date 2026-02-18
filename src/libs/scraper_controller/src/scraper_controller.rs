@@ -76,7 +76,7 @@ pub struct HttpRes {
     pub headers: HashMap<String, String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ActiveProxyTask {
     pub created_at: NaiveDateTime,
     pub last_reallocated: NaiveDateTime,
