@@ -1,12 +1,7 @@
 use axum::{Json, extract::State};
-use serde::Serialize;
+use oxalate_schemas::harvester::private::control::get_scraper_state::Res;
 
 use crate::AppState;
-
-#[derive(Serialize)]
-pub struct Res {
-    pub enabled: bool,
-}
 
 #[utoipa::path(
     get,
