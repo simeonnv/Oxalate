@@ -6,6 +6,7 @@ use oxalate_scraper_controller::ScraperController;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use tokio::time::sleep;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::trace::TraceLayer;
 
@@ -102,6 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         proxy_connection_store: ProxyConnectionStore::default(),
     };
 
+    // create the public http server
     let public_addr = SocketAddr::new(
         ENVVARS.public_harvester_address,
         ENVVARS.public_harvester_port,
@@ -123,6 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap();
     });
 
+    // create the pub http server
     let private_addr = SocketAddr::new(
         ENVVARS.private_harvester_address,
         ENVVARS.private_harvester_port,
@@ -144,6 +147,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap();
     });
 
+    // create a bg thread for saving the scraper state
+    let app_state_save_thread = app_state.to_owned();
+    tokio::spawn(async move {
+        let app_state = app_state_save_thread;
+        loop {
+            if app_state.shutdown.task_tracker.is_closed() {
+                break;
+            }
+
+            if let Err(err) = save_scraper_controller(
+                &app_state.kv_db,
+                &app_state.scraper_controller,
+                SCRAPER_CONTROLLER_KV_KEY,
+            ) {
+                log::error!("failed to save scraper controller to kv: {err:?}");
+            };
+            sleep(Duration::from_mins(5)).await;
+        }
+    });
+
     app_state.shutdown.task_tracker.wait().await;
     info!("shutting down!");
     save_scraper_controller(
@@ -152,7 +175,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         SCRAPER_CONTROLLER_KV_KEY,
     )
     .unwrap();
-    // .inspect_err(|e| log::error!("failed to save scraper controller before shutdown: {:?}", e));
 
     Ok(())
 }
