@@ -52,7 +52,7 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
             info!("got urls!");
 
             let mut outputs = vec![];
-            stream::iter(reqs.0)
+            stream::iter(reqs.proxy_reqs)
                 .map(|req| {
                     global_state
                         .request_counter

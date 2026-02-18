@@ -40,11 +40,17 @@ watch(results, (newVal) => {
 
 
 <template>
-    
+    <div>
+        <div
+            class="flex flex-row justify-center items-center align-middle gap-1 m-2"
+        >
+            <p class="text-8xl">[</p>
+            <p class="text-6xl font-bold">O</p>
+            <p class="text-8xl">]</p>
+        </div>
+    </div>
 
 
-   
-   
     <ul class="list bg-base-100 rounded-box shadow-md">
       
         <div v-if="pending">

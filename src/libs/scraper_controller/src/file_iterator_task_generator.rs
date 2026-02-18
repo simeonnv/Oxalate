@@ -85,7 +85,7 @@ impl ProxyTaskGenerator<Infallible> for FileIteratorTaskGenerator {
             })
             .collect();
 
-        let task = ProxyTask(reqs);
+        let task = ProxyTask { proxy_reqs: reqs };
 
         info!(
             ctx:serde = logging_ctx;

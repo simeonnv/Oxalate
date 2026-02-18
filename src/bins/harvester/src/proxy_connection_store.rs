@@ -2,20 +2,20 @@ use dashmap::DashMap;
 use oxalate_scraper_controller::ProxyId;
 use tokio::sync::watch::{self, Receiver, Sender};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProxyConnectionStore {
-    pub store: DashMap<ProxyId, (Sender<bool>, Receiver<bool>)>,
+    pub inner: DashMap<ProxyId, (Sender<bool>, Receiver<bool>)>,
 }
 
 impl ProxyConnectionStore {
     pub fn new() -> Self {
         Self {
-            store: DashMap::new(),
+            inner: DashMap::new(),
         }
     }
 
     pub async fn subscribe(&self, proxy_id: ProxyId) -> watch::Receiver<bool> {
-        self.store
+        self.inner
             .entry(proxy_id)
             .or_insert(watch::channel(false))
             .to_owned()
@@ -24,15 +24,15 @@ impl ProxyConnectionStore {
 
     pub async fn connected(&self, proxy_id: ProxyId) {
         let _ = self
-            .store
+            .inner
             .entry(proxy_id)
-            .or_insert(watch::channel(false))
+            .or_insert(watch::channel(true))
             .0
             .send(true);
     }
     pub async fn disconnected(&self, proxy_id: ProxyId) {
         let _ = self
-            .store
+            .inner
             .entry(proxy_id)
             .or_insert(watch::channel(false))
             .0
