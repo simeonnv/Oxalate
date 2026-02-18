@@ -1,15 +1,16 @@
 use crate::env::ENVVARS;
 use axum::{Router, middleware::from_fn_with_state};
-use chrono::Utc;
 use log::info;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
-use tokio::sync::oneshot;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::trace::TraceLayer;
+
+mod proxy_connection_store;
+pub use proxy_connection_store::ProxyConnectionStore;
 
 pub mod env;
 
@@ -44,6 +45,7 @@ pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub scraper_controller: Arc<ScraperController>,
     pub proxy_settings_store: ProxySettingsStore,
+    pub proxy_connection_store: ProxyConnectionStore,
     pub shutdown: Arc<Shutdown>,
     pub kafka_outlet_producer: Option<FutureProducer>,
     pub kv_db: KvDb,
@@ -97,6 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         shutdown: Arc::new(Shutdown::default()),
         kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,
+        proxy_connection_store: ProxyConnectionStore::default(),
     };
 
     let public_addr = SocketAddr::new(
