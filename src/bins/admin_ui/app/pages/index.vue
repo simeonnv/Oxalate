@@ -1,5 +1,5 @@
 <template>
     <button class="btn">
-hello
+        hello
     </button>
 </template>
