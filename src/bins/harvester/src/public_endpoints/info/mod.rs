@@ -1,6 +1,6 @@
 use axum::Router;
 use axum::middleware::from_fn_with_state;
-use axum::routing::{any, get, post};
+use axum::routing::{any, post};
 
 use crate::AppState;
 use crate::middleware::proxy_id_middleware;
