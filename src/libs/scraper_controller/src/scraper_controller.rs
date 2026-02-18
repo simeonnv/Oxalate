@@ -35,7 +35,9 @@ pub struct ScraperController {
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct ProxyTask(pub Box<[ProxyReq]>);
+pub struct ProxyTask {
+    pub proxy_reqs: Box<[ProxyReq]>,
+}
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub enum ProxyReq {
@@ -76,11 +78,13 @@ pub struct HttpRes {
     pub headers: HashMap<String, String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct ActiveProxyTask {
     pub created_at: NaiveDateTime,
     pub last_reallocated: NaiveDateTime,
     pub dead: bool,
+
+    #[schema(value_type = ProxyTask)]
     pub task: Arc<ProxyTask>,
 }
 

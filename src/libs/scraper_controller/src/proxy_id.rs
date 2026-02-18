@@ -5,8 +5,9 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
 use exn::{OptionExt, Result, ResultExt};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Debug, ToSchema)]
 pub struct ProxyId(String);
 
 impl Display for ProxyId {

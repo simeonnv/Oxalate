@@ -45,8 +45,8 @@ use proxy_settings_store::ProxySettingsStore;
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub scraper_controller: Arc<ScraperController>,
-    pub proxy_settings_store: ProxySettingsStore,
-    pub proxy_connection_store: ProxyConnectionStore,
+    pub proxy_settings_store: Arc<ProxySettingsStore>,
+    pub proxy_connection_store: Arc<ProxyConnectionStore>,
     pub shutdown: Arc<Shutdown>,
     pub kafka_outlet_producer: Option<FutureProducer>,
     pub kv_db: KvDb,
@@ -96,11 +96,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_state = AppState {
         db_pool,
         scraper_controller,
-        proxy_settings_store: ProxySettingsStore::new(&ENVVARS.urls_file).unwrap(),
+        proxy_settings_store: Arc::new(ProxySettingsStore::new(&ENVVARS.urls_file).unwrap()),
         shutdown: Arc::new(Shutdown::default()),
         kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,
-        proxy_connection_store: ProxyConnectionStore::default(),
+        proxy_connection_store: Arc::new(ProxyConnectionStore::default()),
     };
 
     // create the public http server

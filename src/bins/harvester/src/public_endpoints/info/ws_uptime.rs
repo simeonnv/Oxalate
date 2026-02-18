@@ -78,6 +78,10 @@ pub async fn ws_uptime_task(
         .or_raise(|| HttpError::Internal("".into()))
         {
             log::error!("ws_uptime shutdowned unexpectedly: {err:?}");
+            app_state
+                .proxy_connection_store
+                .disconnected(proxy_id)
+                .await;
             break;
         };
     }
