@@ -67,7 +67,7 @@ enum_dispatch = "0.3.13"
 axum = { version = "0.8.6", features = ["ws", "macros"] }
 
 # Storage
-rdkafka = "0.39.0"
+rdkafka = { version = "0.39.0", features = ["cmake-build", "ssl-vendored"] }
 sqlx = { version = "0.8", features = [
     "runtime-tokio",
     "postgres",
@@ -75,3 +75,6 @@ sqlx = { version = "0.8", features = [
     "chrono",
     "uuid",
 ] }
+
+# build
+cmake = { version = "0.1.57" }
