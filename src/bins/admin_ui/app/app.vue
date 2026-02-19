@@ -1,5 +1,24 @@
+<script lang="ts">
+
+
+declare module 'nuxt/app' {
+  interface NuxtLayouts {
+    'default': unknown
+  }
+}
+// ---cut---
+definePageMeta({
+  layout: 'default',
+})
+
+</script>
+
+
+
 <template>
-  <div class="w-full h-full">
-    <RouterView/>
-  </div>
+  
+    <NuxtLayout>
+      <RouterView/>
+    </NuxtLayout>
+  
 </template>

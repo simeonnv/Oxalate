@@ -34,7 +34,7 @@ oxalate_scraper_controller = { workspace = true }
 oxalate_kv_db = { workspace = true }
 
 dashmap = { workspace = true }
-tower-http = { version = "0.6.7", features = ["trace"] }
+tower-http = { version = "0.6.7", features = ["cors", "trace"] }
 exn = { workspace = true }
 rdkafka = { workspace = true }
 fern = { workspace = true }
