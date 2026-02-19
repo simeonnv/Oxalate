@@ -1,0 +1,6 @@
+{
+  "dependencies": {},
+  "devDependencies": {
+    "@iconify-json/carbon": "^1.2.18"
+  }
+}
