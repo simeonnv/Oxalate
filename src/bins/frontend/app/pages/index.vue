@@ -3,9 +3,8 @@ const router = useRouter();
 const input_text = ref("");
 
 const handleSearch = () => {
-    router.push({
-        
-        path: "/result",
+    router.push({        
+        path: "/search",
         query: { q: input_text.value },
     });
 };
@@ -37,8 +36,3 @@ const handleSearch = () => {
     </div>
 </template>
 
-<style scoped>
-div {
-    font-family: "3270-Regular";
-}
-</style>

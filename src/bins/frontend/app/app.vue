@@ -3,3 +3,9 @@
     <NuxtPage />
   </div>
 </template>
+
+<style scoped>
+div {
+    font-family: "3270-Regular";
+}
+</style>
