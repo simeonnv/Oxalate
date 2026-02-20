@@ -1,4 +1,4 @@
-use utoipa::{ToSchema, schema};
+use utoipa::ToSchema;
 
 #[derive(serde::Deserialize, ToSchema)]
 #[schema(as = Post::Info::Resources::Req)]

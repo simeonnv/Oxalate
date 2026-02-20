@@ -1,6 +1,6 @@
-use crate::env::ENVVARS;
 use axum::{Router, middleware::from_fn_with_state};
 use log::info;
+use oxalate_env::ENVVARS;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
 use rdkafka::{ClientConfig, producer::FutureProducer};
@@ -12,8 +12,6 @@ use tower_http::trace::TraceLayer;
 
 mod proxy_connection_store;
 pub use proxy_connection_store::ProxyConnectionStore;
-
-pub mod env;
 
 pub mod middleware;
 use middleware::logging_middleware::logging_middleware;
@@ -67,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_pool = create_postgres_pool(
         &ENVVARS.postgres_user,
         &ENVVARS.postgres_password,
-        &ENVVARS.db_address,
+        &ENVVARS.db_dns,
         ENVVARS.db_port,
         &ENVVARS.postgres_name,
         ENVVARS.pool_max_conn,
@@ -82,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     scraper_controller.enable();
 
     // TODO in the log creation logic i create a kafka client, so there are 2 kafka clients and 2 pools -> make it 1
-    let producer = ENVVARS.kafka_address.map(|e| {
+    let producer = ENVVARS.kafka_dns.clone().map(|e| {
         ClientConfig::new()
             .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))
             .set(
@@ -105,7 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // create the public http server
     let public_addr = SocketAddr::new(
-        ENVVARS.public_harvester_address,
+        ENVVARS.public_harvester_bind_address,
         ENVVARS.public_harvester_port,
     );
     let pub_app_state = app_state.clone();
@@ -127,7 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // create the pub http server
     let private_addr = SocketAddr::new(
-        ENVVARS.private_harvester_address,
+        ENVVARS.private_harvester_bind_address,
         ENVVARS.private_harvester_port,
     );
     let priv_app_state = app_state.clone();

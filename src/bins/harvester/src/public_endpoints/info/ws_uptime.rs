@@ -1,12 +1,11 @@
-use std::{net::SocketAddr, time::Duration};
+use std::time::Duration;
 
 use crate::{AppState, middleware::logging_middleware::LoggingCTX};
 use axum::{
     Extension,
     body::Bytes,
     debug_handler,
-    extract::{ConnectInfo, State, WebSocketUpgrade, ws::WebSocket},
-    http::HeaderMap,
+    extract::{State, WebSocketUpgrade, ws::WebSocket},
     response::IntoResponse,
 };
 use exn::ResultExt;
@@ -40,7 +39,7 @@ pub async fn ws_uptime_task(
     mut socket: WebSocket,
     app_state: AppState,
     proxy_id: ProxyId,
-    logging_ctx: LoggingCTX,
+    _logging_ctx: LoggingCTX,
 ) {
     app_state
         .proxy_connection_store

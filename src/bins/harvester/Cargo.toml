@@ -5,9 +5,8 @@ edition = "2024"
 
 [dependencies]
 tokio = { workspace = true }
-lazy_static = { workspace = true }
-envconfig = { workspace = true }
-dotenv = { workspace = true }
+
+
 log = { workspace = true }
 axum = { workspace = true }
 thiserror = { workspace = true }
@@ -44,3 +43,4 @@ enum_dispatch = { workspace = true }
 parking_lot = { workspace = true }
 
 kafka_writer_rs = { workspace = true }
+oxalate_env = { workspace = true}

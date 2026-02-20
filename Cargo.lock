@@ -1899,6 +1899,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxalate_env"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "envconfig",
+ "lazy_static",
+]
+
+[[package]]
 name = "oxalate_harvester"
 version = "0.1.0"
 dependencies = [
@@ -1906,18 +1915,16 @@ dependencies = [
  "bincode",
  "chrono",
  "dashmap",
- "dotenv",
  "enum_dispatch",
- "envconfig",
  "exn",
  "fern",
  "futures",
  "futures-util",
  "http_error",
  "kafka_writer_rs",
- "lazy_static",
  "log",
  "log_json_serializer",
+ "oxalate_env",
  "oxalate_kv_db",
  "oxalate_schemas",
  "oxalate_scraper_controller",
@@ -1952,6 +1959,7 @@ dependencies = [
  "lazy_static",
  "log",
  "log_json_serializer",
+ "oxalate_env",
  "oxalate_schemas",
  "rdkafka",
  "serde",

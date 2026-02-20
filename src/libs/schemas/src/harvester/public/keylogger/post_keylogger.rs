@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use utoipa::{ToSchema, schema};
+use utoipa::ToSchema;
 
 #[derive(Deserialize, Serialize, ToSchema)]
 #[schema(as = Post::KeyLogger::Req)]

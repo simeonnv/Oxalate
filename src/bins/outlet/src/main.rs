@@ -1,9 +1,6 @@
 use std::{
     future::pending,
-    sync::{
-        Arc,
-        atomic::{AtomicU64, Ordering},
-    },
+    sync::{Arc, atomic::AtomicU64},
     time::Duration,
 };
 
@@ -36,7 +33,7 @@ use crate::http_logger::HttpLogger;
 static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
 static MACHINE_ID: Lazy<String> =
     Lazy::new(|| machine_uid::machine_id::get_machine_id().unwrap_or("unknown".into()));
-const REQ_FEEDBACK_SPEED_SECS: u64 = 60;
+// const REQ_FEEDBACK_SPEED_SECS: u64 = 60;
 
 pub struct GlobalState {
     request_counter: AtomicU64,

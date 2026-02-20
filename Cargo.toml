@@ -4,6 +4,7 @@ members = [
     "src/bins/harvester",
     "src/bins/indexer",
     "src/bins/outlet",
+    "src/libs/env",
     "src/libs/http_error",
     "src/libs/keylogger",
     "src/libs/kv_db",
@@ -17,6 +18,7 @@ oxalate_keylogger = { path = "src/libs/keylogger" }
 oxalate_scraper_controller = { path = "src/libs/scraper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
+oxalate_env = { path = "src/libs/env" }
 http_error = { path = "src/libs/http_error" }
 
 
