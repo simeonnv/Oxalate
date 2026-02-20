@@ -87,9 +87,9 @@
           indexer-server = indexer-bin;
 
           # To build the images: nix build .#docker-api
-          docker-harvester = mkDocker "harvester-server" harvester-bin;
-          docker-outlet = mkDocker "outlet-server" outlet-bin;
-          docker-indexer= mkDocker "indexer-server" indexer-bin;
+          docker-harvester = mkDocker "oxalate-harvester-server" harvester-bin;
+          docker-outlet = mkDocker "oxalate-outlet-server" outlet-bin;
+          docker-indexer= mkDocker "oxalate-indexer-server" indexer-bin;
         });
     };
 }

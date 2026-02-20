@@ -177,7 +177,7 @@ async fn handle_http_https_request(
 
             Some(Box::new(proxy_output))
         }
-        Err(err) => {
+        Err(_err) => {
             // let code = err.status();
             // let is_timeout = err.is_timeout();
             // let is_connect = err.is_connect();

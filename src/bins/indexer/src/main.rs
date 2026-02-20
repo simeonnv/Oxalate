@@ -1,17 +1,14 @@
 use std::fmt;
 
-use axum::{Router, http::Method};
+use axum::Router;
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
+use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
-use tower_http::cors::{self, AllowMethods, Any, CorsLayer};
-
-use crate::env::ENVVARS;
+use tower_http::cors::{self, Any};
 
 pub mod endpoints;
-
-pub mod env;
 
 mod create_postgres_pool;
 
@@ -40,7 +37,7 @@ impl fmt::Debug for AppState {
 async fn main() {
     let _ = ENVVARS.rust_log;
 
-    let client: Option<FutureProducer> = ENVVARS.kafka_address.as_ref().map(|e| {
+    let client: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|e| {
         let client = ClientConfig::new()
             .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))
             .set(
@@ -66,7 +63,7 @@ async fn main() {
         match client {
             Some(ref client) => {
                 let kafka_writer = Box::new(
-                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_logs_topic).await,
+                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_indexer_logs_topic).await,
                 );
 
                 fern.chain(fern::Output::writer(kafka_writer, "\n"))
@@ -80,7 +77,7 @@ async fn main() {
     let db_pool = create_postgres_pool(
         &ENVVARS.postgres_user,
         &ENVVARS.postgres_password,
-        &ENVVARS.db_address,
+        &ENVVARS.db_dns,
         ENVVARS.db_port,
         &ENVVARS.postgres_name,
         ENVVARS.pool_max_conn,
@@ -106,7 +103,7 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(format!(
         "{}:{}",
-        ENVVARS.indexer_address, ENVVARS.indexer_port
+        ENVVARS.indexer_bind_address, ENVVARS.indexer_port
     ))
     .await
     .unwrap();
