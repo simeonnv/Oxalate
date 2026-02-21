@@ -1871,34 +1871,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "outlet"
-version = "0.1.0"
-dependencies = [
- "async-scoped",
- "chrono",
- "craftping",
- "fern",
- "futures",
- "futures-util",
- "log",
- "log_json_serializer",
- "machine-uid",
- "muddy",
- "once_cell",
- "oxalate_keylogger",
- "oxalate_schemas",
- "oxalate_scraper_controller",
- "reqwest",
- "serde",
- "serde_json",
- "systemstat",
- "thiserror",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
-]
-
-[[package]]
 name = "oxalate_env"
 version = "0.1.0"
 dependencies = [
@@ -1993,6 +1965,34 @@ dependencies = [
  "serde_json",
  "sled",
  "thiserror",
+]
+
+[[package]]
+name = "oxalate_outlet"
+version = "0.1.0"
+dependencies = [
+ "async-scoped",
+ "chrono",
+ "craftping",
+ "fern",
+ "futures",
+ "futures-util",
+ "log",
+ "log_json_serializer",
+ "machine-uid",
+ "muddy",
+ "once_cell",
+ "oxalate_keylogger",
+ "oxalate_schemas",
+ "oxalate_scraper_controller",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "systemstat",
+ "thiserror",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
 ]
 
 [[package]]

@@ -1,4 +1,37 @@
 services:
+  oxalate-harvester:
+    image: oxalate-harvester-server:latest
+    env_file:
+      - ./.env
+    volumes:
+      - ./urls.txt:/urls.txt
+    working_dir: /
+    ports:
+      - 6767:6767
+      - 6969:6969
+    networks:
+      - oxalate-network
+
+  oxalate-indexer:
+    image: oxalate-indexer-server:latest
+    env_file:
+      - ./.env
+    ports:
+      - 22267:22267
+    networks:
+      - oxalate-network
+      - app-network
+      
+  oxalate-outlet:
+    image: oxalate-outlet-server:latest
+    env_file:
+      - ./.env
+    ports:
+      - 22267:22267
+    networks:
+      - oxalate-network
+      - app-network
+  
   oxalate-paradedb:
     image: paradedb/paradedb:latest
     env_file:
@@ -13,32 +46,30 @@ services:
     ports:
       - "6666:5432"
     networks:
-      - app-network
+      - oxalate-network
     restart: unless-stopped
 
   oxalate-redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
-    command:
-      - redpanda
-      - start
-      - --smp 1                              
-      - --mode dev-container
-      - --default-log-level=info
-      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
-      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
-      - --rpc-addr 0.0.0.0:33145
+    command: >
+      redpanda start
+      --smp 1
+      --overprovisioned
+      --node-id 0
+      --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      --advertise-kafka-addr internal://oxalate-redpanda:9092,external://localhost:19092
+      --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      --advertise-pandaproxy-addr internal://oxalate-redpanda:8082,external://localhost:18082
     ports:
-      - "18081:18081"     # Schema Registry
-      - "18082:18082"     # HTTP Proxy
-      - "19092:19092"     # Kafka (external)
-      - "19644:9644"      # Admin API / Prometheus
-    volumes:
-      - oxalate_redpanda_data:/var/lib/redpanda/data
+      - "19092:19092"
+      - "18082:18082"
     networks:
-      - app-network
+      - oxalate-network
+    env_file:
+      - ./.env
 
 networks:
+  oxalate-network:
   app-network:
     driver: bridge
 
@@ -46,3 +77,6 @@ volumes:
   oxalate_paradedb_data:
   oxalate_redpanda_data:
 
+# oxalate-harvester-server:latest                    7ba4f1ba23f9        935MB          465MB
+# oxalate-indexer-server:latest                      84252bbc2958        935MB          465MB
+# oxalate-outlet-server:latest                       8ebd162dba3b        935MB          465MB
