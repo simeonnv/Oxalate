@@ -37,9 +37,11 @@ impl fmt::Debug for AppState {
 async fn main() {
     let _ = ENVVARS.rust_log;
 
-    let client: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|e| {
+    let client: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|dns| {
+        let kafka_connect_url = format!("{}:{}", dns, ENVVARS.kafka_port);
+        println!("kafka connect url is: {kafka_connect_url}");
         let client = ClientConfig::new()
-            .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))
+            .set("bootstrap.servers", kafka_connect_url)
             .set(
                 "message.timeout.ms",
                 ENVVARS.kafka_message_timeout_ms.to_string(),

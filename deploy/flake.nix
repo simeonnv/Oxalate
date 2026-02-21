@@ -1,11 +1,12 @@
 {
-  description = "Oxalate monorepo with multiple Rust Docker images";
+  description = "Oxalate monorepo with multiple Rust Docker images using Naersk";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    naersk.url = "github:nix-community/naersk"; 
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, naersk }:
     let
       supportedSystems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
@@ -15,35 +16,28 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgsFor.${system};
-          buildApp = name: pkgs.rustPlatform.buildRustPackage {
+          naersk-lib = pkgs.callPackage naersk { }; 
+
+          buildApp = name: naersk-lib.buildPackage {
             pname = name;
             version = "0.1.0";
-            src = ../.;
+            src = ../.; 
 
-            cargoLock = {
-              lockFile = ../Cargo.lock;
-              outputHashes = {
-                "kafka_writer_rs-0.1.0" = "sha256-oBoHw1N20tq2wPiov6UOjlQrALJnOUuc//frIziEhqw=";
-                "log_json_serializer-0.1.0" = "sha256-wwes1SkPhPmP9f4A18gpubrfhwhZ0nGbAZyrGTboiV8=";
-              };
-            };
-
-            nativeBuildInputs = [ 
+            nativeBuildInputs = [
               pkgs.pkg-config
-              pkgs.cmake        
+              pkgs.cmake
               pkgs.perl
               pkgs.gcc
               pkgs.automake
             ];
 
-            buildInputs = [ 
+            buildInputs = [
               pkgs.openssl
-              pkgs.zstd         
+              pkgs.zstd
               pkgs.lz4
               pkgs.curl
               pkgs.zlib
-              pkgs.cmake
-              
+              # Note: cmake removed here since it's already in nativeBuildInputs
               pkgs.libx11
               pkgs.libxext
               pkgs.libxinerama
@@ -51,45 +45,44 @@
               pkgs.libxrender
               pkgs.libxfixes
               pkgs.libxi
-              pkgs.libxtst 
+              pkgs.libxtst
             ];
 
-            SQLX_OFFLINE_DIR = "../.sqlx";
-            env = {
-              SQLX_OFFLINE = "true";
-            };
-                                                
+            SQLX_OFFLINE = "true";
+            SQLX_OFFLINE_DIR = "../.sqlx"; 
+
             preBuild = ''
               export SET_MAKE_JOBS=$NIX_BUILD_CORES
-            '';            
+            '';
 
-            buildAndCheckFeatures = [ "--package" name ];
+            cargoBuildOptions = x: x ++ [ "-p" name ];
+            cargoTestOptions = x: x ++ [ "-p" name ];
           };
 
-          mkDocker = name: bin: pkgs.dockerTools.buildLayeredImage {
-            name = name;
+          mkDocker = imageName: binName: binPkg: pkgs.dockerTools.buildLayeredImage {
+            name = imageName;
             tag = "latest";
-            contents = [ pkgs.cacert pkgs.openssl ];
+            contents = [
+              pkgs.cacert
+              pkgs.openssl
+            ];
             config = {
-              Cmd = [ "${bin}/bin/${name}" ];
-              # Env = [ "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" ];
+              Cmd = [ "${binPkg}/bin/${binName}" ];
             };
           };
 
-          harvester-bin = buildApp "harvester";
-          outlet-bin = buildApp "outlet";
-          indexer-bin = buildApp "indexer";
+          harvester-bin = buildApp "oxalate_harvester";
+          outlet-bin = buildApp "oxalate_outlet";
+          indexer-bin = buildApp "oxalate_indexer";
         in
         {
-          # To build the binaries: nix build .#api-server
-          harvester-server = harvester-bin; 
+          harvester-server = harvester-bin;
           outlet-server = outlet-bin;
           indexer-server = indexer-bin;
 
-          # To build the images: nix build .#docker-api
-          docker-harvester = mkDocker "oxalate-harvester-server" harvester-bin;
-          docker-outlet = mkDocker "oxalate-outlet-server" outlet-bin;
-          docker-indexer= mkDocker "oxalate-indexer-server" indexer-bin;
+          docker-harvester = mkDocker "oxalate-harvester-server" "oxalate_harvester" harvester-bin;
+          docker-outlet = mkDocker "oxalate-outlet-server" "oxalate_outlet" outlet-bin;
+          docker-indexer = mkDocker "oxalate-indexer-server" "oxalate_indexer" indexer-bin;
         });
     };
 }
