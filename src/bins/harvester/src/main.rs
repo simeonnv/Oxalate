@@ -172,6 +172,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ) {
                 log::error!("failed to save scraper controller to kv: {err:?}");
             };
+
+            app_state
+                .scraper_controller
+                .mark_dead_tasks(&chrono::Duration::minutes(5), &())
+                .await;
             sleep(Duration::from_mins(5)).await;
         }
     });

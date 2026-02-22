@@ -7,8 +7,6 @@ use get_active_tasks::get_active_tasks;
 pub mod get_connected_proxies;
 use get_connected_proxies::get_connected_proxies;
 
-pub mod get_file_iterator_task_generator_state;
-
 pub fn metric(_state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/active_tasks", get(get_active_tasks))

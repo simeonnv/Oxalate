@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use log::{debug, info};
+use log::info;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
 use exn::Result;
