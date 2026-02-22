@@ -1,5 +1,7 @@
 use axum::{Router, middleware::from_fn_with_state};
+use kafka_writer_rs::KafkaLogWriter;
 use log::info;
+use log_json_serializer::parse_log;
 use oxalate_env::ENVVARS;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
@@ -36,9 +38,6 @@ pub use load_scraper_controller::load_scraper_controller;
 
 pub const SCRAPER_CONTROLLER_KV_KEY: &str = "scraper controller";
 
-mod setup_logger;
-pub use setup_logger::{Error as SetupLoggerError, setup_logger};
-
 pub mod proxy_settings_store;
 use proxy_settings_store::ProxySettingsStore;
 
@@ -63,14 +62,52 @@ pub struct Shutdown {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = ENVVARS.rust_log;
 
-    setup_logger().await.unwrap();
+    let producer: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|dns| {
+        let kafka_connect_url = format!("{}:{}", dns, ENVVARS.kafka_port);
+        println!("kafka connect url is: {kafka_connect_url}");
+        let client = ClientConfig::new()
+            .set("bootstrap.servers", kafka_connect_url)
+            .set(
+                "message.timeout.ms",
+                ENVVARS.kafka_message_timeout_ms.to_string(),
+            )
+            .create()
+            .expect("failed to create kafka client");
+        println!("connected to kafka and inited kafka future producer");
+        client
+    });
+
+    let fern = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}",
+                parse_log(message, record).expect("failed to serialize log into json")
+            ));
+        })
+        .level(log::LevelFilter::Info)
+        .chain(std::io::stdout());
+    let fern = {
+        match producer {
+            Some(ref client) => {
+                let kafka_writer = Box::new(
+                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_harvester_logs_topic)
+                        .await,
+                );
+
+                fern.chain(fern::Output::writer(kafka_writer, "\n"))
+            }
+            _ => fern,
+        }
+    };
+    fern.apply().expect("failed to create logger");
+    log::info!("inited logger");
 
     let db_pool = create_postgres_pool(
         &ENVVARS.postgres_user,
         &ENVVARS.postgres_password,
         &ENVVARS.db_dns,
         ENVVARS.db_port,
-        &ENVVARS.postgres_name,
+        &ENVVARS.postgres_db,
         ENVVARS.pool_max_conn,
     )
     .await
@@ -81,18 +118,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let scraper_controller =
         Arc::new(load_scraper_controller(&kv_db, SCRAPER_CONTROLLER_KV_KEY).unwrap());
     scraper_controller.enable();
-
-    // TODO in the log creation logic i create a kafka client, so there are 2 kafka clients and 2 pools -> make it 1
-    let producer = ENVVARS.kafka_dns.clone().map(|e| {
-        ClientConfig::new()
-            .set("bootstrap.servers", format!("{e}:{}", ENVVARS.kafka_port))
-            .set(
-                "message.timeout.ms",
-                ENVVARS.kafka_message_timeout_ms.to_string(),
-            )
-            .create()
-            .expect("failed to connect to kafka for outlet producer")
-    });
 
     let app_state = AppState {
         db_pool,

@@ -4,6 +4,7 @@ members = [
     "src/bins/harvester",
     "src/bins/indexer",
     "src/bins/outlet",
+    "src/bins/union",
     "src/libs/env",
     "src/libs/http_error",
     "src/libs/keylogger",

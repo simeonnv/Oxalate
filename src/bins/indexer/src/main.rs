@@ -81,7 +81,7 @@ async fn main() {
         &ENVVARS.postgres_password,
         &ENVVARS.db_dns,
         ENVVARS.db_port,
-        &ENVVARS.postgres_name,
+        &ENVVARS.postgres_db,
         ENVVARS.pool_max_conn,
     )
     .await
