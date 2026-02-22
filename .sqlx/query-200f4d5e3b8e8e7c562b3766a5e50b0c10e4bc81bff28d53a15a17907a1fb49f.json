@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO Logs\n                    (id, log, device_machine_id)\n                VALUES ($1, $2, $3);\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "200f4d5e3b8e8e7c562b3766a5e50b0c10e4bc81bff28d53a15a17907a1fb49f"
+}

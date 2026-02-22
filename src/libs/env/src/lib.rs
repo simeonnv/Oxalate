@@ -32,13 +32,22 @@ pub struct EnvVars {
     #[envconfig(from = "INDEXER_DNS", default = "oxalate_indexer")]
     pub indexer_dns: String,
 
+    // union
+    #[envconfig(from = "UNION_BIND_ADDRESS", default = "0.0.0.0")]
+    pub union_bind_address: IpAddr,
+    #[envconfig(from = "UNION_PORT", default = "21167")]
+    pub union_port: u16,
+    #[envconfig(from = "UNION_DNS", default = "oxalate_union")]
+    pub union_dns: String,
+
     // Database
     #[envconfig(from = "POSTGRES_USER")]
     pub postgres_user: String,
     #[envconfig(from = "POSTGRES_PASSWORD")]
     pub postgres_password: String,
-    #[envconfig(from = "POSTGRES_NAME")]
-    pub postgres_name: String,
+    #[envconfig(from = "POSTGRES_DB")]
+    pub postgres_db: String,
+
     #[envconfig(from = "DB_BIND_ADDRESS", default = "0.0.0.0")]
     pub db_bind_address: IpAddr,
     #[envconfig(from = "DB_DNS", default = "oxalate-paradedb")]
@@ -64,6 +73,8 @@ pub struct EnvVars {
     pub kafka_indexer_logs_topic: String,
     #[envconfig(from = "KAFKA_OUTLET_LOGS_TOPIC", default = "outlet_logs")]
     pub kafka_outlet_logs_topic: String,
+    #[envconfig(from = "KAFKA_UNION_LOGS_TOPIC", default = "union_logs")]
+    pub kafka_union_logs_topic: String,
 
     // Filesystem
     #[envconfig(from = "URLS_FILE", default = "./urls.txt")]

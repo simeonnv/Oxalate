@@ -1,14 +1,11 @@
 services:
   oxalate-paradedb:
     image: paradedb/paradedb:latest
-    container_name: harvester-postgres-db
     #   POSTGRES_USER: ${POSTGRES_USER:-root}
     #   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
-    #   POSTGRES_DB: ${POSTGRES_DB:-Oxalate}
+    #   POSRES_DB: ${POSTGRES_DB:-Oxalate}
     env_file:
       - ../../.env.dev
-    environment:
-      POSTGRES_DB: ${POSTGRES_NAME}
     volumes:
       - oxalate_paradedb_data:/var/lib/postgresql
     labels:

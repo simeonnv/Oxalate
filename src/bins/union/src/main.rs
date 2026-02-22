@@ -1,36 +1,13 @@
-use std::fmt;
-
 use axum::Router;
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
 use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
-use sqlx::{Pool, Postgres};
 use tower_http::cors::{self, Any};
-
-pub mod endpoints;
-
-mod create_postgres_pool;
-
-pub use create_postgres_pool::create_postgres_pool;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db_pool: Pool<Postgres>,
     pub kafka_producer_client: Option<FutureProducer>,
-}
-
-impl fmt::Debug for AppState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut dbg = f.debug_struct("AppState");
-        let dbg = dbg.field("db_pool", &self.db_pool);
-
-        let kpc_str = match &self.kafka_producer_client {
-            Some(_) => "Some(<FutureProducer>)",
-            None => "None",
-        };
-        dbg.field("kafka_producer_client", &kpc_str).finish()
-    }
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -65,7 +42,7 @@ async fn main() {
         match client {
             Some(ref client) => {
                 let kafka_writer = Box::new(
-                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_indexer_logs_topic).await,
+                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_union_logs_topic).await,
                 );
 
                 fern.chain(fern::Output::writer(kafka_writer, "\n"))
@@ -76,19 +53,18 @@ async fn main() {
     fern.apply().expect("failed to create logger");
     log::info!("inited logger");
 
-    let db_pool = create_postgres_pool(
-        &ENVVARS.postgres_user,
-        &ENVVARS.postgres_password,
-        &ENVVARS.db_dns,
-        ENVVARS.db_port,
-        &ENVVARS.postgres_db,
-        ENVVARS.pool_max_conn,
-    )
-    .await
-    .expect("failed to connect to db");
+    // let db_pool = create_postgres_pool(
+    //     &ENVVARS.postgres_user,
+    //     &ENVVARS.postgres_password,
+    //     &ENVVARS.db_dns,
+    //     ENVVARS.db_port,
+    //     &ENVVARS.postgres_name,
+    //     ENVVARS.pool_max_conn,
+    // )
+    // .await
+    // .expect("failed to connect to db");
 
     let state = AppState {
-        db_pool,
         kafka_producer_client: client,
     };
 
@@ -99,13 +75,13 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
-        .merge(endpoints::endpoints(&state))
+        // .merge(endpoints::endpoints(&state))
         .layer(cors)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(format!(
         "{}:{}",
-        ENVVARS.indexer_bind_address, ENVVARS.indexer_port
+        ENVVARS.union_bind_address, ENVVARS.union_port
     ))
     .await
     .unwrap();

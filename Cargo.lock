@@ -1922,8 +1922,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "chrono",
- "dotenv",
- "envconfig",
  "exn",
  "fern",
  "http_error",
@@ -2030,6 +2028,26 @@ dependencies = [
  "url",
  "utoipa",
  "uuid",
+]
+
+[[package]]
+name = "oxalate_union"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "dashmap",
+ "fern",
+ "futures",
+ "http_error",
+ "kafka_writer_rs",
+ "log",
+ "log_json_serializer",
+ "oxalate_env",
+ "oxalate_schemas",
+ "rdkafka",
+ "serde",
+ "tokio",
+ "tower-http",
 ]
 
 [[package]]

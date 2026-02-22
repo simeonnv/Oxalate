@@ -1,0 +1,20 @@
+[package]
+name = "oxalate_union"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+dashmap = { workspace = true }
+axum = { workspace = true }
+fern = { workspace = true }
+log_json_serializer = { workspace = true }
+kafka_writer_rs = { workspace = true }
+tower-http = { version = "0.6.8", features = ["cors"] }
+oxalate_env = { workspace = true }
+rdkafka = { workspace = true }
+http_error = { workspace = true }
+oxalate_schemas = { workspace = true }
+log = { workspace = true }
