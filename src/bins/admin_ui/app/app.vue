@@ -18,7 +18,7 @@ definePageMeta({
 <template>
   
     <NuxtLayout>
-      <RouterView/>
+      <NuxtPage/>
     </NuxtLayout>
   
 </template>
