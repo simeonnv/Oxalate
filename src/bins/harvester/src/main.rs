@@ -8,7 +8,10 @@ use sqlx::{Pool, Postgres};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 use tokio::time::sleep;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
-use tower_http::trace::TraceLayer;
+use tower_http::{
+    cors::{self, Any},
+    trace::TraceLayer,
+};
 
 mod proxy_connection_store;
 pub use proxy_connection_store::ProxyConnectionStore;
@@ -128,6 +131,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ENVVARS.private_harvester_bind_address,
         ENVVARS.private_harvester_port,
     );
+
+    // DEVELOPMENT ONLY
+    let cors = cors::CorsLayer::new()
+        .allow_methods(Any)
+        .allow_origin(Any)
+        .allow_headers(Any);
+
     let priv_app_state = app_state.clone();
     let priv_shutdown = app_state.shutdown.to_owned();
     tokio::spawn(async move {
@@ -135,6 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let router = Router::new()
             .merge(private_endpoints(&priv_app_state))
             .with_state(priv_app_state.to_owned())
+            .layer(cors)
             .layer(TraceLayer::new_for_http())
             .layer(from_fn_with_state(priv_app_state, logging_middleware));
 
