@@ -13,7 +13,7 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use dashmap::DashMap;
 use enum_dispatch::enum_dispatch;
 use exn::*;
-use log::{debug, error, info};
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use url::Url;

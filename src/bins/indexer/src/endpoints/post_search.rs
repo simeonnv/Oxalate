@@ -23,6 +23,7 @@ pub async fn post_search(
 ) -> Result<Json<Res>, HttpError> {
     struct DbRes {
         pub url: String,
+        #[allow(dead_code)]
         pub keywords: String,
         pub score: Option<f32>,
     }

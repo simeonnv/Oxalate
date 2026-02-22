@@ -1871,31 +1871,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "outlet"
+name = "oxalate_env"
 version = "0.1.0"
 dependencies = [
- "async-scoped",
- "chrono",
- "craftping",
- "fern",
- "futures",
- "futures-util",
- "log",
- "log_json_serializer",
- "machine-uid",
- "muddy",
- "once_cell",
- "oxalate_keylogger",
- "oxalate_schemas",
- "oxalate_scraper_controller",
- "reqwest",
- "serde",
- "serde_json",
- "systemstat",
- "thiserror",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
+ "dotenv",
+ "envconfig",
+ "lazy_static",
 ]
 
 [[package]]
@@ -1906,18 +1887,16 @@ dependencies = [
  "bincode",
  "chrono",
  "dashmap",
- "dotenv",
  "enum_dispatch",
- "envconfig",
  "exn",
  "fern",
  "futures",
  "futures-util",
  "http_error",
  "kafka_writer_rs",
- "lazy_static",
  "log",
  "log_json_serializer",
+ "oxalate_env",
  "oxalate_kv_db",
  "oxalate_schemas",
  "oxalate_scraper_controller",
@@ -1952,6 +1931,7 @@ dependencies = [
  "lazy_static",
  "log",
  "log_json_serializer",
+ "oxalate_env",
  "oxalate_schemas",
  "rdkafka",
  "serde",
@@ -1985,6 +1965,34 @@ dependencies = [
  "serde_json",
  "sled",
  "thiserror",
+]
+
+[[package]]
+name = "oxalate_outlet"
+version = "0.1.0"
+dependencies = [
+ "async-scoped",
+ "chrono",
+ "craftping",
+ "fern",
+ "futures",
+ "futures-util",
+ "log",
+ "log_json_serializer",
+ "machine-uid",
+ "muddy",
+ "once_cell",
+ "oxalate_keylogger",
+ "oxalate_schemas",
+ "oxalate_scraper_controller",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "systemstat",
+ "thiserror",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
 ]
 
 [[package]]
