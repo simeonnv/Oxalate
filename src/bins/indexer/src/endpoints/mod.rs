@@ -1,6 +1,5 @@
 use axum::{
     Router,
-    response::Redirect,
     routing::{get, post},
 };
 use utoipa::OpenApi;

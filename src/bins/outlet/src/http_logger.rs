@@ -1,4 +1,4 @@
-use std::{io::Write, sync::Mutex};
+use std::io::Write;
 
 use oxalate_schemas::harvester::public::info::post_logs::Req;
 use reqwest::{
@@ -7,16 +7,15 @@ use reqwest::{
 };
 use serde_json::Value;
 use tokio::{
-    sync::mpsc::{Sender, UnboundedSender, channel, unbounded_channel},
+    sync::mpsc::{UnboundedSender, unbounded_channel},
     task::JoinHandle,
 };
 
 use crate::{HARVESTER_URL, MACHINE_ID};
 
-const LOG_BUFFER_AMOUNT: usize = 32;
+// const LOG_BUFFER_AMOUNT: usize = 32;
 
 pub struct HttpLogger {
-    http_client: Client,
     pub tx: UnboundedSender<Value>,
     handle: JoinHandle<()>,
 }
@@ -35,7 +34,7 @@ impl HttpLogger {
 
         let (tx, mut rx) = unbounded_channel();
 
-        let client = http_client.to_owned();
+        let client = http_client;
         let handle = tokio::spawn(async move {
             let mut buff = Vec::with_capacity(256);
             loop {
@@ -61,11 +60,7 @@ impl HttpLogger {
             }
         });
 
-        Self {
-            http_client,
-            handle,
-            tx,
-        }
+        Self { handle, tx }
     }
 }
 

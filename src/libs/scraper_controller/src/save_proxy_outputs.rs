@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use exn::{Result, ResultExt};
 use flate2::Compression;
-use log::{debug, info};
+use log::info;
 use scraper::{Html, Selector};
 use serde::Serialize;
 use sqlx::{Pool, Postgres};
@@ -38,7 +38,7 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
     output: &HttpRes,
     db_pool: &Pool<Postgres>,
     proxy_id: &ProxyId,
-    logging_ctx: &LoggingCTX,
+    _logging_ctx: &LoggingCTX,
 ) -> Result<(), Error> {
     // info!(ctx:serde = logging_ctx; "starting to save proxy http res");
     let body = &output.body;

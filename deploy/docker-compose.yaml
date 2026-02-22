@@ -1,0 +1,82 @@
+services:
+  oxalate-harvester:
+    image: oxalate-harvester-server:latest
+    env_file:
+      - ./.env
+    volumes:
+      - ./urls.txt:/urls.txt
+    working_dir: /
+    ports:
+      - 6767:6767
+      - 6969:6969
+    networks:
+      - oxalate-network
+
+  oxalate-indexer:
+    image: oxalate-indexer-server:latest
+    env_file:
+      - ./.env
+    ports:
+      - 22267:22267
+    networks:
+      - oxalate-network
+      - app-network
+      
+  oxalate-outlet:
+    image: oxalate-outlet-server:latest
+    env_file:
+      - ./.env
+    ports:
+      - 22267:22267
+    networks:
+      - oxalate-network
+      - app-network
+  
+  oxalate-paradedb:
+    image: paradedb/paradedb:latest
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_NAME}
+    volumes:
+      - oxalate_paradedb_data:/var/lib/postgresql
+    labels:
+      kompose.init.containers.command: "echo Initializing harvester postgres database"
+      kompose.controller.expose.port: true
+    ports:
+      - "6666:5432"
+    networks:
+      - oxalate-network
+    restart: unless-stopped
+
+  oxalate-redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    command: >
+      redpanda start
+      --smp 1
+      --overprovisioned
+      --node-id 0
+      --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      --advertise-kafka-addr internal://oxalate-redpanda:9092,external://localhost:19092
+      --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      --advertise-pandaproxy-addr internal://oxalate-redpanda:8082,external://localhost:18082
+    ports:
+      - "19092:19092"
+      - "18082:18082"
+    networks:
+      - oxalate-network
+    env_file:
+      - ./.env
+
+networks:
+  oxalate-network:
+  app-network:
+    driver: bridge
+
+volumes:
+  oxalate_paradedb_data:
+  oxalate_redpanda_data:
+
+# oxalate-harvester-server:latest                    7ba4f1ba23f9        935MB          465MB
+# oxalate-indexer-server:latest                      84252bbc2958        935MB          465MB
+# oxalate-outlet-server:latest                       8ebd162dba3b        935MB          465MB

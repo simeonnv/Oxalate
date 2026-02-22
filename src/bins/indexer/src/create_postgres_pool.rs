@@ -1,7 +1,10 @@
-use log::{debug, info};
+use std::time::Duration;
+
+use log::info;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
 use exn::Result;
+use tokio::time::sleep;
 
 pub async fn create_postgres_pool(
     postgres_user: &'static str,
@@ -15,13 +18,25 @@ pub async fn create_postgres_pool(
         "postgres://{}:{}@{}:{}/{}",
         postgres_user, postgres_password, db_address, db_port, postgres_name
     );
-    debug!("postgres connection url: {db_url}");
     info!("creating a connection with db: {}", postgres_name);
+    info!("postgres connection url: {db_url}");
 
-    let pool = PgPoolOptions::new()
-        .max_connections(max_conn)
-        .connect(&db_url)
-        .await?;
+    let pool = loop {
+        let pool = PgPoolOptions::new()
+            .max_connections(max_conn)
+            .connect(&db_url)
+            .await;
+        match pool {
+            Ok(e) => {
+                break e;
+            }
+            Err(err) => {
+                eprintln!("failed to connect to postres: {err}, retrying in a few secs");
+                sleep(Duration::from_secs(30)).await;
+                continue;
+            }
+        };
+    };
 
     Ok(pool)
 }

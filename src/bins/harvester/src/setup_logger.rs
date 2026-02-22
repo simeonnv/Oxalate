@@ -1,8 +1,7 @@
 use exn::Exn;
 use kafka_writer_rs::KafkaLogWriter;
+use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
-
-use crate::env::ENVVARS;
 
 use log_json_serializer::parse_log;
 
@@ -27,7 +26,7 @@ pub async fn setup_logger() -> Result<(), Exn<Error>> {
         .level(log::LevelFilter::Info)
         .chain(std::io::stdout());
 
-    let fern = match ENVVARS.kafka_address {
+    let fern = match &ENVVARS.kafka_dns {
         Some(e) => {
             let fern = fern;
             let producer: FutureProducer = ClientConfig::new()
