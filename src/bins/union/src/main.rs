@@ -5,6 +5,10 @@ use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use tower_http::cors::{self, Any};
 
+use crate::union_db::UnionDB;
+
+pub mod union_db;
+
 #[derive(Clone)]
 pub struct AppState {
     pub kafka_producer_client: Option<FutureProducer>,
@@ -12,6 +16,15 @@ pub struct AppState {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
+    let union_db = UnionDB::<String>::new("./gei".into());
+    let sex = String::from(
+        "please enable cookies sorry you have been blocked you are unable access com why have i been blocked this website using security service protect itself from online attacks action you just performed triggered security solution there are several actions that could trigger this block including submitting certain word phrase sql command malformed data what can i do resolve this you can email site owner let them know you were blocked please include what you were doing when this page came up cloudflare ray id found bottom this page cloudflare ray id d ad f ee your ip click reveal performance security cloudflare",
+    ).split(" ").map(|e| e.to_owned()).collect::<Vec<String>>();
+
+    union_db.insert_buf(&sex, 1, 10);
+    dbg!(union_db.extract_relations(&String::from("you"), 10));
+    // dbg!(union_db);
+
     let _ = ENVVARS.rust_log;
 
     let client: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|dns| {

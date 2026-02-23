@@ -19,25 +19,21 @@ services:
 
   oxalate-redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
-    command:
-      - redpanda
-      - start
-      - --smp 1                              
-      - --mode dev-container
-      - --default-log-level=info
-      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
-      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
-      - --rpc-addr 0.0.0.0:33145
+    command: >
+      redpanda start
+      --smp 1
+      --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      --advertise-kafka-addr internal://oxalate-redpanda:9092,external://localhost:19092
+      --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      --advertise-pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      --mode dev-container
     ports:
-      - "18081:18081"     # Schema Registry
-      - "18082:18082"     # HTTP Proxy
-      - "19092:19092"     # Kafka (external)
-      - "19644:9644"      # Admin API / Prometheus
-    volumes:
-      - oxalate_redpanda_data:/var/lib/redpanda/data
+      - "19092:19092"
+      - "18082:18082"
     networks:
       - app-network
+    env_file:
+      - ../../.env.dev
 
 networks:
   app-network:

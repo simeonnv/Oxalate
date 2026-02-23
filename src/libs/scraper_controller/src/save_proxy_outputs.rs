@@ -108,6 +108,7 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
                 } else if let Some(text) = node.value().as_text() {
                     let t = text.trim();
                     if !t.is_empty() {
+                        let t = t.to_lowercase();
                         buffer.push(t.to_string());
                     }
                 }
@@ -115,7 +116,27 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
         }
 
         extract_text(root, &mut text_parts);
-        let keywords_text = text_parts.join(" ");
+
+        let raw_text = text_parts.join(" ");
+        let cleaned_chars: String = raw_text
+            .chars()
+            .map(|c| {
+                if c.is_alphabetic() || c.is_whitespace() {
+                    c
+                } else {
+                    ' '
+                }
+            })
+            .collect();
+        let stop_words = [
+            "and", "or", "is", "the", "a", "an", "of", "to", "in", "for", "with", "on", "at", "by",
+        ];
+        let keywords_text = cleaned_chars
+            .split_whitespace()
+            .filter(|word| !stop_words.contains(word) || word.len() == 1)
+            .collect::<Vec<_>>()
+            .join(" ");
+
         Ok(keywords_text)
 
         // let keywords_text = html
