@@ -1,4 +1,21 @@
 services:
+  
+  oxalate-neo4j:
+    image: neo4j:latest
+    volumes:
+        - oxalate_neo4j_data:/logs
+        - oxalate_neo4j_data:/config
+        - oxalate_neo4j_data:/data
+        - oxalate_neo4j_data:/plugins
+    environment:
+      - NEO4J_server_config_strict__validation_enabled=false
+    env_file:
+      - ../../.env.dev
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    restart: always
+  
   oxalate-paradedb:
     image: paradedb/paradedb:latest
     #   POSTGRES_USER: ${POSTGRES_USER:-root}
@@ -42,5 +59,5 @@ networks:
 volumes:
   oxalate_paradedb_data:
   oxalate_redpanda_data:
-
+  oxalate_neo4j_data:
 # postgresql://root:root@localhost:6666/Oxalate
