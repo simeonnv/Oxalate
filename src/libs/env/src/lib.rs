@@ -40,7 +40,7 @@ pub struct EnvVars {
     #[envconfig(from = "UNION_DNS", default = "oxalate_union")]
     pub union_dns: String,
 
-    // Database
+    // Postgres
     #[envconfig(from = "POSTGRES_USER")]
     pub postgres_user: String,
     #[envconfig(from = "POSTGRES_PASSWORD")]
@@ -56,6 +56,16 @@ pub struct EnvVars {
     pub db_port: u16,
     #[envconfig(from = "POOL_MAX_CONN", default = "25")]
     pub pool_max_conn: u32,
+
+    // Neo4j
+    #[envconfig(from = "NEO4J_AUTH", default = "neo4j/rootrootroot")]
+    pub neo4j_auth: String,
+    #[envconfig(from = "NEO4J_BIND_ADDRESS", default = "0.0.0.0")]
+    pub neo4j_bind_address: IpAddr,
+    #[envconfig(from = "NEO4J_PORT", default = "7687")]
+    pub neo4j_port: u16,
+    #[envconfig(from = "NEO4J_DNS")]
+    pub neo4j_dns: String,
 
     // Kafka
     #[envconfig(from = "KAFKA_BIND_ADDRESS", default = "0.0.0.0")]
@@ -95,7 +105,12 @@ pub fn load_env_vars() -> EnvVars {
 
     let env_vars = EnvVars::init_from_env();
     match env_vars {
-        Ok(e) => e,
+        Ok(e) => {
+            if e.neo4j_auth.split("/").count() != 2 {
+                panic!(r#"invalid neo4j auth env var, it has to be "<NAME>/<PASSWORD>""#)
+            }
+            e
+        }
         Err(e) => panic!("failed to load env vars: {}", e),
     }
 }

@@ -18,3 +18,10 @@ rdkafka = { workspace = true }
 http_error = { workspace = true }
 oxalate_schemas = { workspace = true }
 log = { workspace = true }
+parking_lot = { workspace = true }
+sqlx = { workspace = true }
+neo4rs = { version = "0.8.0" }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+exn = { workspace = true }
+itertools = { version = "0.14.0" }

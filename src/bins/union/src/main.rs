@@ -1,30 +1,26 @@
+use std::time::Duration;
+
 use axum::Router;
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
+use neo4rs::Graph;
 use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use tokio::time::sleep;
 use tower_http::cors::{self, Any};
 
-use crate::union_db::UnionDB;
-
-pub mod union_db;
+pub mod endpoints;
 
 #[derive(Clone)]
 pub struct AppState {
     pub kafka_producer_client: Option<FutureProducer>,
+    pub log4j_pool: Graph,
+    pub db_pool: Pool<Postgres>,
 }
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
-    let union_db = UnionDB::<String>::new("./gei".into());
-    let sex = String::from(
-        "please enable cookies sorry you have been blocked you are unable access com why have i been blocked this website using security service protect itself from online attacks action you just performed triggered security solution there are several actions that could trigger this block including submitting certain word phrase sql command malformed data what can i do resolve this you can email site owner let them know you were blocked please include what you were doing when this page came up cloudflare ray id found bottom this page cloudflare ray id d ad f ee your ip click reveal performance security cloudflare",
-    ).split(" ").map(|e| e.to_owned()).collect::<Vec<String>>();
-
-    union_db.insert_buf(&sex, 1, 10);
-    dbg!(union_db.extract_relations(&String::from("you"), 10));
-    // dbg!(union_db);
-
     let _ = ENVVARS.rust_log;
 
     let client: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|dns| {
@@ -66,19 +62,59 @@ async fn main() {
     fern.apply().expect("failed to create logger");
     log::info!("inited logger");
 
-    // let db_pool = create_postgres_pool(
-    //     &ENVVARS.postgres_user,
-    //     &ENVVARS.postgres_password,
-    //     &ENVVARS.db_dns,
-    //     ENVVARS.db_port,
-    //     &ENVVARS.postgres_name,
-    //     ENVVARS.pool_max_conn,
-    // )
-    // .await
-    // .expect("failed to connect to db");
+    let db_pool = {
+        let db_url: String = format!(
+            "postgres://{}:{}@{}:{}/{}",
+            ENVVARS.postgres_user,
+            ENVVARS.postgres_password,
+            ENVVARS.db_dns,
+            ENVVARS.db_port,
+            ENVVARS.postgres_db
+        );
+        log::info!("creating a connection with db: {}", ENVVARS.postgres_db);
+        log::info!("postgres connection url: {db_url}");
+
+        loop {
+            let pool = PgPoolOptions::new()
+                .max_connections(ENVVARS.pool_max_conn)
+                .connect(&db_url)
+                .await;
+            match pool {
+                Ok(e) => {
+                    break e;
+                }
+                Err(err) => {
+                    log::error!("failed to connect to postres: {err}, retrying in a few secs");
+                    sleep(Duration::from_secs(30)).await;
+                    continue;
+                }
+            };
+        }
+    };
+    log::info!("postgres inited");
+
+    let graph_db = {
+        let mut parts = ENVVARS.neo4j_auth.split("/");
+        let user = parts.next().unwrap_or("root");
+        let password = parts.next().unwrap_or("root");
+        let url = format!("{}:{}", ENVVARS.neo4j_bind_address, ENVVARS.neo4j_port);
+        loop {
+            match Graph::new(&url, user, password).await {
+                Err(err) => {
+                    log::error!("failed to connect to log4j: {err}, retrying in a few secs");
+                    sleep(Duration::from_secs(30)).await;
+                    continue;
+                }
+                Ok(e) => break e,
+            }
+        }
+    };
+    log::info!("log4j inited");
 
     let state = AppState {
         kafka_producer_client: client,
+        log4j_pool: graph_db,
+        db_pool,
     };
 
     // DEVELOPMENT ONLY
@@ -88,7 +124,7 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
-        // .merge(endpoints::endpoints(&state))
+        .merge(endpoints::endpoints(&state))
         .layer(cors)
         .with_state(state);
 
@@ -98,5 +134,10 @@ async fn main() {
     ))
     .await
     .unwrap();
+    log::info!(
+        "oxalate_union running at {}:{}",
+        ENVVARS.union_bind_address,
+        ENVVARS.union_port,
+    );
     axum::serve(listener, app).await.unwrap();
 }
