@@ -37,6 +37,7 @@ pub async fn create_postgres_pool(
             }
         };
     };
+    info!("connected to the db successfully");
 
     Ok(pool)
 }
