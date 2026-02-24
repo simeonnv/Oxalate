@@ -1,14 +1,18 @@
 use std::time::Duration;
 
 use axum::Router;
+use clap::{Parser, arg, command};
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
-use neo4rs::Graph;
+use neo4rs::{Graph, query};
 use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use tokio::time::sleep;
 use tower_http::cors::{self, Any};
+
+mod migrate_postgres_to_neo4j;
+pub use migrate_postgres_to_neo4j::migrate_postgres_to_neo4j;
 
 pub mod endpoints;
 
@@ -19,9 +23,17 @@ pub struct AppState {
     pub db_pool: Pool<Postgres>,
 }
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+pub struct Args {
+    #[arg(long, default_value_t = false)]
+    migrate_postgres_to_neo4j: bool,
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
     let _ = ENVVARS.rust_log;
+    let args = Args::parse();
 
     let client: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|dns| {
         let kafka_connect_url = format!("{}:{}", dns, ENVVARS.kafka_port);
@@ -111,11 +123,34 @@ async fn main() {
     };
     log::info!("log4j inited");
 
+    graph_db
+        .run(query(
+            "
+           CREATE CONSTRAINT IF NOT EXISTS FOR (w:Word) REQUIRE w.text IS UNIQUE;
+        ",
+        ))
+        .await
+        .unwrap();
+    graph_db
+        .run(query(
+            "
+           CREATE CONSTRAINT IF NOT EXISTS FOR (w:Website) REQUIRE w.url IS UNIQUE;
+        ",
+        ))
+        .await
+        .unwrap();
+
     let state = AppState {
         kafka_producer_client: client,
         log4j_pool: graph_db,
         db_pool,
     };
+
+    if args.migrate_postgres_to_neo4j {
+        log::info!("MIGRATING POSTGRES TO NEO4J");
+        migrate_postgres_to_neo4j(state.to_owned()).await;
+        log::info!("MIGRATING POSTGRES TO NEO4J IS DONE");
+    }
 
     // DEVELOPMENT ONLY
     let cors = cors::CorsLayer::new()

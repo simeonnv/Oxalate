@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT keywords, url FROM Webpages\n                WHERE created_at < $1\n                ORDER BY created_at DESC\n                LIMIT 50\n                OFFSET $2;\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "keywords",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "url",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamp",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7bee0bbeb83368ad61c40c9cb55222d0ee1959d5efae1b350388100ef5bd56b7"
+}

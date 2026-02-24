@@ -20,8 +20,11 @@ oxalate_schemas = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
 sqlx = { workspace = true }
-neo4rs = { version = "0.8.0" }
+neo4rs = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 exn = { workspace = true }
 itertools = { version = "0.14.0" }
+thiserror = { workspace = true }
+clap = { version = "4.5.60", features = ["derive"] }
+chrono = { workspace = true }
