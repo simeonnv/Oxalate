@@ -9,6 +9,7 @@ services:
         - oxalate_neo4j_data:/plugins
     environment:
       - NEO4J_server_config_strict__validation_enabled=false
+      - NEO4J_PLUGINS=["apoc"]
     env_file:
       - ../../.env.dev
     ports:

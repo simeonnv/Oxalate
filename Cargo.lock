@@ -2248,6 +2248,7 @@ dependencies = [
  "flate2",
  "http",
  "log",
+ "oxalate_utils",
  "parking_lot 0.12.5",
  "scraper",
  "serde",
@@ -2290,6 +2291,10 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
 ]
+
+[[package]]
+name = "oxalate_utils"
+version = "0.1.0"
 
 [[package]]
 name = "parking"

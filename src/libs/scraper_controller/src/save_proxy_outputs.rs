@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use exn::{Result, ResultExt};
 use flate2::Compression;
 use log::info;
+use oxalate_utils::parse_into_words;
 use scraper::{Html, Selector};
 use serde::Serialize;
 use sqlx::{Pool, Postgres};
@@ -118,54 +119,9 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
         extract_text(root, &mut text_parts);
 
         let raw_text = text_parts.join(" ");
-        let cleaned_chars: String = raw_text
-            .chars()
-            .map(|c| {
-                if c.is_alphabetic() || c.is_whitespace() {
-                    c
-                } else {
-                    ' '
-                }
-            })
-            .collect();
-        let stop_words = [
-            "and", "or", "is", "the", "a", "an", "of", "to", "in", "for", "with", "on", "at", "by",
-        ];
-        let keywords_text = cleaned_chars
-            .split_whitespace()
-            .filter(|word| !stop_words.contains(word) || word.len() == 1)
-            .collect::<Vec<_>>()
-            .join(" ");
+        let keywords_text = parse_into_words(raw_text).join(" ");
 
         Ok(keywords_text)
-
-        // let keywords_text = html
-        //     .root_element()
-        //     .descendants()
-        //     .filter(|n| {
-        //         !n.value().as_element().is_some_and(|e| {
-        //             e.name() == "script"
-        //                 || e.name() == "style"
-        //                 || e.name() == "svg"
-        //                 || e.name() == "path"
-        //                 || e.name() == "g"
-        //         })
-        //     })
-        //     .filter_map(|n| n.value().as_text())
-        //     .map(|t| t.trim())
-        //     .filter(|t| !t.is_empty())
-        //     .collect::<Vec<_>>()
-        //     .join(" ");
-
-        // Ok(keywords_text)
-
-        // Ok(html
-        //     .root_element()
-        //     .text()
-        //     .map(|t| t.trim())
-        //     .filter(|t| !t.is_empty())
-        //     .collect::<Vec<_>>() // collect into a Vec<&str>
-        //     .join(" "))
     })?;
     // info!(ctx:serde = logging_ctx; "keywords extracted, now compressing raw output");
 
