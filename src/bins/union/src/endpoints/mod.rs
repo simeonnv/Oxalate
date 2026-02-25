@@ -14,6 +14,9 @@ use get_ping::get_ping;
 pub mod post_insert_keywords;
 pub use post_insert_keywords::post_insert_keywords;
 
+pub mod post_search_graph;
+pub use post_search_graph::post_search_graph;
+
 pub fn endpoints(state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/ping", get(get_ping))
