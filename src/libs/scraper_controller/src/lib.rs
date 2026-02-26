@@ -11,4 +11,6 @@ pub use proxy_id::ProxyId;
 mod file_iterator_task_generator;
 pub use file_iterator_task_generator::FileIteratorTaskGenerator;
 
+mod save_keywords_in_neo4j;
+pub(crate) use save_keywords_in_neo4j::save_keywords_in_neo4j;
 // pub mod ipv4_iterator_task_generator;

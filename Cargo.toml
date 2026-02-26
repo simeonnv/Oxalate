@@ -83,5 +83,8 @@ sqlx = { version = "0.8", features = [
 ] }
 neo4rs = { version = "0.8.0" }
 
+# util
+itertools = { version = "0.14.0" }
+
 # build
 cmake = { version = "0.1.57" }

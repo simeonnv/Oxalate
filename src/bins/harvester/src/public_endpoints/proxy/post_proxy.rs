@@ -67,7 +67,13 @@ pub async fn post_proxy(
 
             app_state
                 .scraper_controller
-                .complete_task(&proxy_id, &proxy_outputs, &app_state.db_pool, &logging_ctx)
+                .complete_task(
+                    &proxy_id,
+                    &proxy_outputs,
+                    &app_state.db_pool,
+                    &app_state.neo4j_pool,
+                    &logging_ctx,
+                )
                 .await
                 .or_raise(|| Error::ReturnUrls)
                 .or_raise(|| HttpError::Internal("".into()))?;

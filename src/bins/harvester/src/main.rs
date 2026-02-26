@@ -2,6 +2,7 @@ use axum::{Router, middleware::from_fn_with_state};
 use kafka_writer_rs::KafkaLogWriter;
 use log::info;
 use log_json_serializer::parse_log;
+use neo4rs::Graph;
 use oxalate_env::ENVVARS;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
@@ -44,6 +45,7 @@ use proxy_settings_store::ProxySettingsStore;
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
+    pub neo4j_pool: Graph,
     pub scraper_controller: Arc<ScraperController>,
     pub proxy_settings_store: Arc<ProxySettingsStore>,
     pub proxy_connection_store: Arc<ProxyConnectionStore>,
@@ -113,6 +115,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await
     .unwrap();
 
+    let neo4j_pool = {
+        let mut parts = ENVVARS.neo4j_auth.split("/");
+        let user = parts.next().unwrap_or("root");
+        let password = parts.next().unwrap_or("root");
+        let url = format!("{}:{}", ENVVARS.neo4j_bind_address, ENVVARS.neo4j_port);
+        loop {
+            match Graph::new(&url, user, password).await {
+                Err(err) => {
+                    log::error!("failed to connect to log4j: {err}, retrying in a few secs");
+                    sleep(Duration::from_secs(30)).await;
+                    continue;
+                }
+                Ok(e) => break e,
+            }
+        }
+    };
+    log::info!("log4j inited");
+
     let kv_db = KvDb::new(&PathBuf::from("./db")).unwrap();
     let app_state_kv_db = kv_db.clone();
     let scraper_controller =
@@ -120,13 +140,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     scraper_controller.enable();
 
     let app_state = AppState {
-        db_pool,
         scraper_controller,
         proxy_settings_store: Arc::new(ProxySettingsStore::new(&ENVVARS.urls_file).unwrap()),
         shutdown: Arc::new(Shutdown::default()),
         kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,
         proxy_connection_store: Arc::new(ProxyConnectionStore::default()),
+        neo4j_pool,
+        db_pool,
     };
 
     // create the public http server

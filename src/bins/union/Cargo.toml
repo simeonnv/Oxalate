@@ -24,7 +24,6 @@ neo4rs = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 exn = { workspace = true }
-itertools = { version = "0.14.0" }
 thiserror = { workspace = true }
 clap = { version = "4.5.60", features = ["derive"] }
 chrono = { workspace = true }

@@ -60,7 +60,6 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
 
                     async {
                         match req {
-                            // ProxyReq::Msp(e) => handle_msp_request(e.url).await,
                             ProxyReq::Http(e) => {
                                 handle_http_https_request(&reqwest_client, e.url, &global_state)
                                     .await

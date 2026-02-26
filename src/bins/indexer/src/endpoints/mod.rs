@@ -15,6 +15,8 @@ use post_search::post_search;
 
 mod app_docs;
 
+pub mod post_keyword_graph;
+
 pub fn endpoints(_state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/ping", get(get_ping))
