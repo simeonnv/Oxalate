@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use exn::{Result, ResultExt};
 use flate2::Compression;
 use log::info;
+use neo4rs::Graph;
 use oxalate_utils::parse_into_words;
 use scraper::{Html, Selector};
 use serde::Serialize;
@@ -10,6 +11,7 @@ use std::io::prelude::*;
 use std::{collections::HashSet, ops::Deref};
 use url::Url;
 
+use crate::save_keywords_in_neo4j;
 use crate::{
     ProxyId,
     scraper_controller::{HttpRes, ProxyRes},
@@ -19,16 +21,21 @@ pub async fn save_proxy_outputs<LoggingCTX: Serialize>(
     proxy_id: &ProxyId,
     proxy_res: &[ProxyRes],
     db_pool: &Pool<Postgres>,
+    neo4j_pool: &Graph,
     logging_ctx: &LoggingCTX,
 ) -> Result<(), Error> {
     info!(ctx:serde = logging_ctx; "starting to save proxy responses into db");
     for output in proxy_res {
         match output {
-            ProxyRes::HttpRes(http_based_output) => {
-                save_http_https_output(http_based_output, db_pool, proxy_id, logging_ctx)
-                    .await
-                    .or_raise(|| Error::FailedToHandleHttpRes)?
-            } // ProxyRes::Msp(msp_output) => save_mcp_output(msp_output, &db_pool, proxy_id).await?,
+            ProxyRes::HttpRes(http_based_output) => save_http_https_output(
+                http_based_output,
+                db_pool,
+                neo4j_pool,
+                proxy_id,
+                logging_ctx,
+            )
+            .await
+            .or_raise(|| Error::FailedToHandleHttpRes)?, // ProxyRes::Msp(msp_output) => save_mcp_output(msp_output, &db_pool, proxy_id).await?,
         }
     }
     info!(ctx:serde = logging_ctx; "successfully saved proxy res into db");
@@ -38,6 +45,7 @@ pub async fn save_proxy_outputs<LoggingCTX: Serialize>(
 pub async fn save_http_https_output<LoggingCTX: Serialize>(
     output: &HttpRes,
     db_pool: &Pool<Postgres>,
+    neo4j_pool: &Graph,
     proxy_id: &ProxyId,
     _logging_ctx: &LoggingCTX,
 ) -> Result<(), Error> {
@@ -119,9 +127,9 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
         extract_text(root, &mut text_parts);
 
         let raw_text = text_parts.join(" ");
-        let keywords_text = parse_into_words(raw_text).join(" ");
+        let keywords = parse_into_words(raw_text);
 
-        Ok(keywords_text)
+        Ok(keywords)
     })?;
     // info!(ctx:serde = logging_ctx; "keywords extracted, now compressing raw output");
 
@@ -134,6 +142,10 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
     let headers_json = serde_json::to_value(&output.headers).or_raise(|| Error::JsonHeaders)?;
     let url = output.url.to_string();
 
+    save_keywords_in_neo4j(neo4j_pool, &keywords, &url, 5)
+        .await
+        .or_raise(|| Error::InsertKeywordsNeo4j)?;
+
     sqlx::query!(
         "
                 INSERT INTO Webpages
@@ -144,7 +156,7 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
             ",
         url,
         compressed_html,
-        keywords,
+        keywords.join(" "),
         headers_json,
         proxy_id.deref()
     )
@@ -229,6 +241,9 @@ pub enum Error {
 
     #[error("Failed to parse html {0}")]
     HtmlParse(String),
+
+    #[error("Failed to insert the keywords in neo4j")]
+    InsertKeywordsNeo4j,
 
     #[error("Failed to json parse http headers")]
     JsonHeaders,

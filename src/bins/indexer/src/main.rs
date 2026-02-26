@@ -1,11 +1,13 @@
-use std::fmt;
+use std::{fmt, time::Duration};
 
 use axum::Router;
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
+use neo4rs::Graph;
 use oxalate_env::ENVVARS;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
+use tokio::time::sleep;
 use tower_http::cors::{self, Any};
 
 pub mod endpoints;
@@ -17,6 +19,7 @@ pub use create_postgres_pool::create_postgres_pool;
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
+    pub neo4j_pool: Graph,
     pub kafka_producer_client: Option<FutureProducer>,
 }
 
@@ -87,9 +90,28 @@ async fn main() {
     .await
     .expect("failed to connect to db");
 
+    let neo4j_pool = {
+        let mut parts = ENVVARS.neo4j_auth.split("/");
+        let user = parts.next().unwrap_or("root");
+        let password = parts.next().unwrap_or("root");
+        let url = format!("{}:{}", ENVVARS.neo4j_bind_address, ENVVARS.neo4j_port);
+        loop {
+            match Graph::new(&url, user, password).await {
+                Err(err) => {
+                    log::error!("failed to connect to log4j: {err}, retrying in a few secs");
+                    sleep(Duration::from_secs(30)).await;
+                    continue;
+                }
+                Ok(e) => break e,
+            }
+        }
+    };
+    log::info!("log4j inited");
+
     let state = AppState {
         db_pool,
         kafka_producer_client: client,
+        neo4j_pool,
     };
 
     // DEVELOPMENT ONLY
