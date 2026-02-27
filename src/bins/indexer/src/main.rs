@@ -1,6 +1,6 @@
 use std::{fmt, time::Duration};
 
-use axum::Router;
+use axum::{Router, http::HeaderMap};
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
 use neo4rs::Graph;
@@ -9,6 +9,11 @@ use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
 use tokio::time::sleep;
 use tower_http::cors::{self, Any};
+
+use wreq::header::{
+    ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, UPGRADE_INSECURE_REQUESTS,
+    USER_AGENT,
+};
 
 pub mod endpoints;
 pub mod scraping;
@@ -113,7 +118,7 @@ async fn main() {
     log::info!("neo4j inited");
 
     let wreqclient = Client::builder()
-        .emulation(Emulation::SafariIpad26_2)
+        .emulation(Emulation::Firefox147)
         .build()
         .unwrap();
 

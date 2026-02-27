@@ -7,7 +7,7 @@ use url::Url;
 pub async fn request(query: &str, state: &AppState) -> Result<String, http_error::HttpError> {
     let resp = state
         .wreqclient
-        .get(format!("https://lite.duckduckgo.com/lite"))
+        .get(format!("https://www.mojeek.com/search"))
         .query(&[("q", query), ("nfpr", "1")])
         .send()
         .await
@@ -20,7 +20,7 @@ pub async fn request(query: &str, state: &AppState) -> Result<String, http_error
 }
 
 pub fn parse_response(body: &str) -> Vec<String> {
-    let fragment = scraper::Html::parse_document(body);
+    let fragment = scraper::Html::parse_fragment(body);
     let selector = Selector::parse(r#"a[href]"#).unwrap();
     let mut hrefs: Vec<String> = Vec::new();
 
@@ -28,8 +28,10 @@ pub fn parse_response(body: &str) -> Vec<String> {
         if let Some(href) = element.attr("href")
             && let Ok(url) = Url::parse(href)
         {
-            if matches!(url.scheme(), "http" | "https") && url.host().is_some()
-            //&& !href.contains("duckduckgo")
+            if matches!(url.scheme(), "http" | "https")
+                && url.host().is_some()
+                && !href.contains("mojeek")
+                && !href.contains("Mojeek")
             {
                 hrefs.push(href.to_string());
             }
