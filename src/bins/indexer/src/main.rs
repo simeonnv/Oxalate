@@ -113,7 +113,7 @@ async fn main() {
     log::info!("neo4j inited");
 
     let wreqclient = Client::builder()
-        .emulation(Emulation::Firefox139)
+        .emulation(Emulation::SafariIpad26_2)
         .build()
         .unwrap();
 
@@ -130,8 +130,10 @@ async fn main() {
         .allow_origin(Any)
         .allow_headers(Any);
 
-    let thingy = scraping::google::request("hitler", &state).await.unwrap();
-    let goy = scraping::google::parse_response(&thingy);
+    let thingy = scraping::duckduckgo::request("hitler", &state)
+        .await
+        .unwrap();
+    let goy = scraping::duckduckgo::parse_response(&thingy);
     dbg!(goy);
 
     let app = Router::new()

@@ -1,1 +1,2 @@
-pub mod google;
+pub mod brave;
+pub mod duckduckgo;
