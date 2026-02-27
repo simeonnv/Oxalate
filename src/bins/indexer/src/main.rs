@@ -106,7 +106,7 @@ async fn main() {
             }
         }
     };
-    log::info!("log4j inited");
+    log::info!("neo4j inited");
 
     let state = AppState {
         db_pool,
@@ -131,5 +131,6 @@ async fn main() {
     ))
     .await
     .unwrap();
+    log::info!("server listening on {listener:?}");
     axum::serve(listener, app).await.unwrap();
 }
