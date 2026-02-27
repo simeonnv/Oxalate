@@ -10,6 +10,7 @@ members = [
     "src/libs/kv_db",
     "src/libs/schemas",
     "src/libs/scraper_controller",
+    "src/libs/utils",
 ]
 
 
@@ -19,6 +20,8 @@ oxalate_scraper_controller = { path = "src/libs/scraper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
 oxalate_env = { path = "src/libs/env" }
+oxalate_utils = { path = "src/libs/utils" }
+
 http_error = { path = "src/libs/http_error" }
 
 
@@ -77,6 +80,10 @@ sqlx = { version = "0.8", features = [
     "chrono",
     "uuid",
 ] }
+neo4rs = { version = "0.8.0" }
+
+# util
+itertools = { version = "0.14.0" }
 
 # build
 cmake = { version = "0.1.57" }

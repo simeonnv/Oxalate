@@ -32,13 +32,22 @@ pub struct EnvVars {
     #[envconfig(from = "INDEXER_DNS", default = "oxalate_indexer")]
     pub indexer_dns: String,
 
-    // Database
+    // union
+    #[envconfig(from = "UNION_BIND_ADDRESS", default = "0.0.0.0")]
+    pub union_bind_address: IpAddr,
+    #[envconfig(from = "UNION_PORT", default = "21167")]
+    pub union_port: u16,
+    #[envconfig(from = "UNION_DNS", default = "oxalate_union")]
+    pub union_dns: String,
+
+    // Postgres
     #[envconfig(from = "POSTGRES_USER")]
     pub postgres_user: String,
     #[envconfig(from = "POSTGRES_PASSWORD")]
     pub postgres_password: String,
-    #[envconfig(from = "POSTGRES_NAME")]
-    pub postgres_name: String,
+    #[envconfig(from = "POSTGRES_DB")]
+    pub postgres_db: String,
+
     #[envconfig(from = "DB_BIND_ADDRESS", default = "0.0.0.0")]
     pub db_bind_address: IpAddr,
     #[envconfig(from = "DB_DNS", default = "oxalate-paradedb")]
@@ -47,6 +56,16 @@ pub struct EnvVars {
     pub db_port: u16,
     #[envconfig(from = "POOL_MAX_CONN", default = "25")]
     pub pool_max_conn: u32,
+
+    // Neo4j
+    #[envconfig(from = "NEO4J_AUTH", default = "neo4j/rootrootroot")]
+    pub neo4j_auth: String,
+    #[envconfig(from = "NEO4J_BIND_ADDRESS", default = "0.0.0.0")]
+    pub neo4j_bind_address: IpAddr,
+    #[envconfig(from = "NEO4J_PORT", default = "7687")]
+    pub neo4j_port: u16,
+    #[envconfig(from = "NEO4J_DNS")]
+    pub neo4j_dns: String,
 
     // Kafka
     #[envconfig(from = "KAFKA_BIND_ADDRESS", default = "0.0.0.0")]
@@ -64,6 +83,8 @@ pub struct EnvVars {
     pub kafka_indexer_logs_topic: String,
     #[envconfig(from = "KAFKA_OUTLET_LOGS_TOPIC", default = "outlet_logs")]
     pub kafka_outlet_logs_topic: String,
+    #[envconfig(from = "KAFKA_UNION_LOGS_TOPIC", default = "union_logs")]
+    pub kafka_union_logs_topic: String,
 
     // Filesystem
     #[envconfig(from = "URLS_FILE", default = "./urls.txt")]
@@ -84,7 +105,12 @@ pub fn load_env_vars() -> EnvVars {
 
     let env_vars = EnvVars::init_from_env();
     match env_vars {
-        Ok(e) => e,
+        Ok(e) => {
+            if e.neo4j_auth.split("/").count() != 2 {
+                panic!(r#"invalid neo4j auth env var, it has to be "<NAME>/<PASSWORD>""#)
+            }
+            e
+        }
         Err(e) => panic!("failed to load env vars: {}", e),
     }
 }

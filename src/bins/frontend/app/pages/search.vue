@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+    layout: 'search-bar',
+})
+
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
@@ -45,58 +49,36 @@ watch(results, (newVal) => {
 </script>
 
 <template>
-    <div class="flex flex-col h-screen box-border">
+    <div class="bg-base-100 rounded-box shadow-md flex flex-col grow overflow-hidden">
         
-        <div class="navbar bg-base-200 shadow-sm flex flex-row rounded-xl shrink-0">
-            <NuxtLink to="/">
-                <div class="flex hover:bg-base-300 ease-in-out transition-all rounded-xl flex-row justify-center items-center gap-1 m-2 p-2">
-                    <span class="text-6xl">[</span>
-                    <span class="text-4xl font-bold">Oxalate</span>
-                    <span class="text-6xl">]</span>
-                </div>
-            </NuxtLink>
-            <div class="grow px-4">
-                <input 
-                    v-model="search_text"
-                    @keypress.enter="handleSearch"
-                    type="text" 
-                    placeholder="Search" 
-                    class="input input-bordered w-full" 
-                />
-            </div>
+        <div v-if="pending" class="flex grow items-center justify-center">
+            <span class="loading loading-spinner loading-lg"></span>
         </div>
-
-        <div class="bg-base-100 rounded-box shadow-md flex flex-col grow overflow-hidden">
-            
-            <div v-if="pending" class="flex grow items-center justify-center">
-                <span class="loading loading-spinner loading-lg"></span>
+    
+        <div v-else-if="error" class="flex grow items-center justify-center gap-2">
+            <div class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-error"></span>
             </div>
+            <p>Error fetching data</p>
+        </div>
+    
+        <div v-else-if="results?.search_results?.length" class="flex flex-col h-full">
+            <p class="p-4 pb-2 text-xl opacity-60 tracking-wide">Search results:</p>
+            <ul class="overflow-y-auto px-4 pb-4">
+                <li 
+                    v-for="item in results.search_results" 
+                    :key="item.url"
+                    class="border-b border-base-200 py-3 flex justify-between items-center"
+                >
+                    <a class="text-base truncate mr-4" :href="item.url">{{ item.url }}</a>
+                    <div class="badge badge-ghost font-mono">{{ item.score }}</div>
+                </li>
+            </ul>
+        </div>
         
-            <div v-else-if="error" class="flex grow items-center justify-center gap-2">
-                <div class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-error"></span>
-                </div>
-                <p>Error fetching data</p>
-            </div>
-        
-            <div v-else-if="results?.search_results?.length" class="flex flex-col h-full">
-                <p class="p-4 pb-2 text-xl opacity-60 tracking-wide">Search results:</p>
-                <ul class="overflow-y-auto px-4 pb-4">
-                    <li 
-                        v-for="item in results.search_results" 
-                        :key="item.url"
-                        class="border-b border-base-200 py-3 flex justify-between items-center"
-                    >
-                        <a class="text-base truncate mr-4" :href="item.url">{{ item.url }}</a>
-                        <div class="badge badge-ghost font-mono">{{ item.score }}</div>
-                    </li>
-                </ul>
-            </div>
-
-            <div v-else class="flex grow items-center justify-center">
-                <p class="text-4xl opacity-80">Found nothing!</p>
-            </div>
+        <div v-else class="flex grow items-center justify-center">
+            <p class="text-4xl opacity-80">Found nothing!</p>
         </div>
     </div>
 </template>

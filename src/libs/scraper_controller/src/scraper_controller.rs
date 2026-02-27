@@ -14,6 +14,7 @@ use dashmap::DashMap;
 use enum_dispatch::enum_dispatch;
 use exn::*;
 use log::{debug, info};
+use neo4rs::Graph;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use url::Url;
@@ -183,6 +184,7 @@ impl ScraperController {
         proxy_id: &ProxyId,
         proxy_res: &[ProxyRes],
         db_pool: &Pool<Postgres>,
+        neo4j_pool: &Graph,
         logging_ctx: &LoggingCTX,
     ) -> Result<(), Error> {
         info!(ctx:serde = logging_ctx; "called complete task at scraper controller");
@@ -192,7 +194,7 @@ impl ScraperController {
             return Ok(());
         }
 
-        save_proxy_outputs(proxy_id, proxy_res, db_pool, logging_ctx)
+        save_proxy_outputs(proxy_id, proxy_res, db_pool, neo4j_pool, logging_ctx)
             .await
             .or_raise(|| Error::FailedToSaveProxyRes)?;
 
