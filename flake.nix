@@ -43,11 +43,16 @@
         libxfixes
         libxi
         libxtst
+        libclang
+        llvm
       ];
 
       shellHook = ''
         export RUST_SRC_PATH="${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}"
         export SQLX_OFFLINE="true"
+
+        export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+        export LD_LIBRARY_PATH="${pkgs.libclang.lib}/lib:${pkgs.llvm.lib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
         if [ -f .env.dev ]; then
           export $(echo $(cat .env.dev | sed 's/#.*//g' | xargs) | envsubst)

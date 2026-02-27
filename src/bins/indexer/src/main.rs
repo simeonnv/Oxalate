@@ -11,16 +11,20 @@ use tokio::time::sleep;
 use tower_http::cors::{self, Any};
 
 pub mod endpoints;
+pub mod scraping;
 
 mod create_postgres_pool;
 
 pub use create_postgres_pool::create_postgres_pool;
+use wreq::Client;
+use wreq_util::Emulation;
 
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub neo4j_pool: Graph,
     pub kafka_producer_client: Option<FutureProducer>,
+    pub wreqclient: wreq::Client,
 }
 
 impl fmt::Debug for AppState {
@@ -108,10 +112,16 @@ async fn main() {
     };
     log::info!("neo4j inited");
 
+    let wreqclient = Client::builder()
+        .emulation(Emulation::Firefox139)
+        .build()
+        .unwrap();
+
     let state = AppState {
         db_pool,
         kafka_producer_client: client,
         neo4j_pool,
+        wreqclient,
     };
 
     // DEVELOPMENT ONLY
@@ -119,6 +129,10 @@ async fn main() {
         .allow_methods(Any)
         .allow_origin(Any)
         .allow_headers(Any);
+
+    let thingy = scraping::google::request("hitler", &state).await.unwrap();
+    let goy = scraping::google::parse_response(&thingy);
+    dbg!(goy);
 
     let app = Router::new()
         .merge(endpoints::endpoints(&state))
