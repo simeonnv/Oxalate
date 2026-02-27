@@ -6,8 +6,6 @@ edition = "2024"
 [dependencies]
 tokio = { workspace = true }
 lazy_static = { workspace = true }
-envconfig = { workspace = true }
-dotenv = { workspace = true }
 log = { workspace = true }
 axum = { workspace = true }
 thiserror = { workspace = true }
@@ -28,3 +26,5 @@ log_json_serializer = { workspace = true }
 kafka_writer_rs = { workspace = true }
 tower-http = { version = "0.6.8", features = ["cors"] }
 oxalate_env = { workspace = true }
+neo4rs = { workspace = true }
+oxalate_utils = { workspace = true }

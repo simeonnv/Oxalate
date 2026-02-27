@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO Keylogs\n                        (device_machine_id, key, created_at)\n                        VALUES ($1, $2, $3)\n                    ;\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Timestamp"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb7803f0aa4dc65a19ef3018e98d39d8a732db1bc1b98696bb625b19fb00a67a"
+}

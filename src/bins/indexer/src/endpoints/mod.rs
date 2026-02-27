@@ -15,10 +15,14 @@ use post_search::post_search;
 
 mod app_docs;
 
+pub mod post_keyword_graph;
+use post_keyword_graph::post_keyword_graph;
+
 pub fn endpoints(_state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/ping", get(get_ping))
         .route("/search", post(post_search))
+        .route("/keyword_graph", post(post_keyword_graph))
         .merge(SwaggerUi::new("/swagger").url("/api-docs/openapi.json", ApiDoc::openapi()))
     // .route(
     //     "/swagger",

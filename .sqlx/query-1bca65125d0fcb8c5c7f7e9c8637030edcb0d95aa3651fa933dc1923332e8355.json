@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO Devices\n                (machine_id)\n            VALUES\n                ($1)\n            ;\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1bca65125d0fcb8c5c7f7e9c8637030edcb0d95aa3651fa933dc1923332e8355"
+}
