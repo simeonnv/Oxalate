@@ -94,12 +94,19 @@ async fn get_metasearch_results(
         *counts.entry(value).or_insert(0.0) += 1.0;
     }
 
-    let response: Vec<SearchResult> = counts
+    let mut response: Vec<SearchResult> = counts
         .into_iter()
         .map(|(url_string, score)| SearchResult {
             url: Url::parse(&url_string).unwrap(), // FIXXXXXX
             score,
         })
         .collect();
+
+    response.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
     Ok(response)
 }
