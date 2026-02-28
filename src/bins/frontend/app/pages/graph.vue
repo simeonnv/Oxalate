@@ -1,6 +1,10 @@
 <template>
-    <div ref="containerRef" class="w-full h-full flex flex-row items-center justify-center overflow-hidden">
+    <div  v-if="results" ref="containerRef" class="w-full h-full flex flex-row items-center justify-center overflow-hidden bg-base-300/60">
       <svg ref="svgRef" width="100%" height="100%"></svg>
+    </div>
+
+    <div v-else class="w-full h-full text-4xl font-bold flex items-center justify-center">
+        Failed to load graph
     </div>
 </template>
 
