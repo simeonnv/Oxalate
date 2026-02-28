@@ -12,6 +12,7 @@ pub struct Req {
 #[schema(as = Post::Search::Res)]
 pub struct Res {
     pub search_results: Vec<SearchResult>,
+    pub metasearch_results: Vec<SearchResult>,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Debug)]

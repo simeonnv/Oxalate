@@ -135,12 +135,6 @@ async fn main() {
         .allow_origin(Any)
         .allow_headers(Any);
 
-    let thingy = scraping::duckduckgo::request("hitler", &state)
-        .await
-        .unwrap();
-    let goy = scraping::duckduckgo::parse_response(&thingy);
-    dbg!(goy);
-
     let app = Router::new()
         .merge(endpoints::endpoints(&state))
         .layer(cors)
