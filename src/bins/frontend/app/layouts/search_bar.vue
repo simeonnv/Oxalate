@@ -18,8 +18,8 @@ const navigateToTab = (path: string) => {
 </script>
 
 <template>
-    <div class="flex flex-col h-screen box-border">
-        <div class="navbar bg-base-200 shadow-sm flex flex-row rounded-none shrink-0 gap-2">
+    <div class="flex flex-col h-screen">
+        <div class="navbar border-base-200 border-b-2 flex flex-row rounded-none shrink-0 gap-2">
             <NuxtLink to="/">
                 <div class="flex hover:bg-base-300 ease-in-out transition-all p-2 rounded-none flex-row justify-center items-center gap-1">
                     <span class="text-6xl">[</span>
@@ -44,13 +44,13 @@ const navigateToTab = (path: string) => {
                         All
                     </button>
 
-                    <button 
+                    <!-- <button 
                         @click="navigateToTab('/images')"
                         class="btn btn-primary btn-outline btn-xs border rounded-none"
                         :class="{ 'btn-active': route.path === '/images' }"
                     >
                         Images
-                    </button>
+                    </button> -->
 
                     <button 
                         @click="navigateToTab('/graph')"
@@ -61,6 +61,7 @@ const navigateToTab = (path: string) => {
                     </button>
                 </div>
             </div>
+            <ThemeButton/>
         </div>
         <slot/>
     </div>

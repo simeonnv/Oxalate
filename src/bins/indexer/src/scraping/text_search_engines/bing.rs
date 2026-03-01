@@ -31,15 +31,15 @@ impl SearchEngine<TextSearchEngineResult, Client, Error> for TextSearchBing {
             .header("Cookie", &format!("SRCHHPGUSR=IG={}", cvid))
             .query(&[
                 ("q", query),
-                ("pq", query),
-                ("cvid", &cvid),
-                ("filters", "rcrse:\"1\""),
-                ("FORM", "PERE"),
-                ("ghc", "1"),
+                ("form", "QBLH"),
+                ("sp", "-1"),
                 ("lq", "0"),
+                ("pq", query),
+                ("sc", "12-4"),
                 ("qs", "n"),
                 ("sk", ""),
-                ("sp", "-1"),
+                ("cvid", &cvid),
+                ("filters", "rcrse:\"1\""),
             ])
             .send()
             .await

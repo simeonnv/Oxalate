@@ -48,7 +48,7 @@ impl SearchEngine<TextSearchEngineResult, Pool<Postgres>, Error> for TextSearchO
                 Some(TextSearchEngineResult {
                     url: Url::parse(&e.url).ok()?,
                     title: e.title,
-                    text: e.keywords.chars().take(60).collect::<String>(),
+                    text: e.keywords.chars().take(180).collect::<String>(),
                 })
             })
             .collect();

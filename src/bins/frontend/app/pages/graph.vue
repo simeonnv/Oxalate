@@ -1,5 +1,5 @@
 <template>
-    <div  v-if="results" ref="containerRef" class="w-full h-full flex flex-row items-center justify-center overflow-hidden bg-base-300/60">
+    <div  v-if="results" ref="containerRef" class="w-full h-full flex flex-row items-center justify-center overflow-hidden">
       <svg ref="svgRef" width="100%" height="100%"></svg>
     </div>
 
@@ -146,7 +146,7 @@ const linkLabels = container.append("g")
   .data(links)
   .join("text")
   .text(d => d.power.toFixed(1))
-  .attr("class", "fill-secondary-content text-xs select-none pointer-events-none")
+  .attr("class", "fill-base-content text-xs select-none pointer-events-none")
   .attr("text-anchor", "middle")
   .attr("dominant-baseline", "central")
   .style("background", "white"); 
