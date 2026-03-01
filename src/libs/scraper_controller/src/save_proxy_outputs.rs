@@ -61,16 +61,22 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
     let mut urls = HashSet::new();
     let urls_ref = &mut urls;
 
-    let keywords = tokio::task::block_in_place(move || {
+    let (keywords, title) = tokio::task::block_in_place(move || {
         let html = Html::parse_document(body);
+
+        let title_sel = Selector::parse("title")
+            .map_err(|e| Error::HtmlParse(e.to_string()))
+            .or_raise(|| Error::HtmlExtract)?;
+
+        let title = html
+            .select(&title_sel)
+            .next()
+            .map(|el| el.text().collect::<String>().trim().to_string())
+            .unwrap_or_default();
 
         let href_sel = Selector::parse(r#"a[href], area[href]"#)
             .map_err(|e| Error::HtmlParse(e.to_string()))
-            .or_raise(|| Error::HtmlExtract);
-        let href_sel = match href_sel {
-            Ok(e) => e,
-            Err(err) => return Err(err),
-        };
+            .or_raise(|| Error::HtmlExtract)?;
 
         for el in html.select(&href_sel) {
             if let Some(link) = el.value().attr("href") {
@@ -112,24 +118,21 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
                     ) {
                         continue;
                     }
-
                     extract_text(child_el, buffer);
                 } else if let Some(text) = node.value().as_text() {
                     let t = text.trim();
                     if !t.is_empty() {
-                        let t = t.to_lowercase();
-                        buffer.push(t.to_string());
+                        buffer.push(t.to_lowercase());
                     }
                 }
             }
         }
 
         extract_text(root, &mut text_parts);
-
         let raw_text = text_parts.join(" ");
         let keywords = parse_into_words(raw_text);
 
-        Ok(keywords)
+        exn::Ok((keywords, title))
     })?;
     // info!(ctx:serde = logging_ctx; "keywords extracted, now compressing raw output");
 
@@ -149,16 +152,17 @@ pub async fn save_http_https_output<LoggingCTX: Serialize>(
     sqlx::query!(
         "
                 INSERT INTO Webpages
-                    (url, compressed_body, keywords, headers, device_machine_id)
+                    (url, compressed_body, keywords, headers, device_machine_id, title)
                 VALUES
-                    ($1, $2, $3, $4, $5)
+                    ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (url) DO NOTHING;   
             ",
         url,
         compressed_html,
         keywords.join(" "),
         headers_json,
-        proxy_id.deref()
+        proxy_id.deref(),
+        title
     )
     .execute(db_pool)
     .await

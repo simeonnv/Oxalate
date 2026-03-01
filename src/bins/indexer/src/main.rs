@@ -1,6 +1,6 @@
-use std::{fmt, time::Duration};
+use std::{fmt, net::IpAddr, str::FromStr, time::Duration};
 
-use axum::{Router, http::HeaderMap};
+use axum::Router;
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
 use neo4rs::Graph;
@@ -9,11 +9,6 @@ use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
 use tokio::time::sleep;
 use tower_http::cors::{self, Any};
-
-use wreq::header::{
-    ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, UPGRADE_INSECURE_REQUESTS,
-    USER_AGENT,
-};
 
 pub mod endpoints;
 pub mod scraping;
@@ -24,12 +19,14 @@ pub use create_postgres_pool::create_postgres_pool;
 use wreq::Client;
 use wreq_util::Emulation;
 
+use crate::scraping::search_text;
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub neo4j_pool: Graph,
     pub kafka_producer_client: Option<FutureProducer>,
-    pub wreqclient: wreq::Client,
+    pub wreq_client: wreq::Client,
 }
 
 impl fmt::Debug for AppState {
@@ -117,16 +114,22 @@ async fn main() {
     };
     log::info!("neo4j inited");
 
-    let wreqclient = Client::builder()
-        .emulation(Emulation::Firefox147)
+    let wreq_client = Client::builder()
+        .local_address(IpAddr::from_str("0.0.0.0").unwrap())
+        .emulation(Emulation::Firefox139)
+        .timeout(Duration::from_secs(10))
         .build()
+        .unwrap();
+
+    search_text("hello", wreq_client.to_owned(), db_pool.to_owned())
+        .await
         .unwrap();
 
     let state = AppState {
         db_pool,
         kafka_producer_client: client,
         neo4j_pool,
-        wreqclient,
+        wreq_client,
     };
 
     // DEVELOPMENT ONLY

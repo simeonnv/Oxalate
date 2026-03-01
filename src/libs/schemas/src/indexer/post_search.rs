@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use url::Url;
 use utoipa::ToSchema;
@@ -11,13 +13,13 @@ pub struct Req {
 #[derive(Deserialize, Serialize, ToSchema, Debug)]
 #[schema(as = Post::Search::Res)]
 pub struct Res {
-    pub search_results: Vec<SearchResult>,
-    pub metasearch_results: Vec<SearchResult>,
+    pub search_results: HashMap<String, Vec<SearchResult>>,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Debug)]
 #[schema(as = Post::Search::Res::SearchResult)]
 pub struct SearchResult {
     pub url: Url,
-    pub score: f32,
+    pub text: String,
+    pub title: String,
 }
