@@ -16,5 +16,18 @@ export default defineNuxtConfig({
     "@nuxt/hints",
     "@nuxt/icon",
     "@nuxt/image",
+    '@nuxtjs/color-mode',
   ],
+
+  colorMode: {
+    preference: 'system',
+    fallback: 'light',
+    dataValue: 'theme',
+    classSuffix: ''
+  },
+
+  runtimeConfig: {
+    kafkaAddress: "0.0.0.0",
+    kafkaPort: 9092,
+  }
 });

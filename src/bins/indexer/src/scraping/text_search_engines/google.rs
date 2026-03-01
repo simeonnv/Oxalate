@@ -32,7 +32,6 @@ impl SearchEngine<TextSearchEngineResult, Client, Error> for TextSearchGoogle {
             .text()
             .await
             .or_raise(|| Error::ResToText)?;
-        dbg!(&res);
 
         let dom = Html::parse_document(&res);
         let mut results = Vec::new();

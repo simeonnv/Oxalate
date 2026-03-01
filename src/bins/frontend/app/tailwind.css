@@ -2,8 +2,31 @@
 
 @plugin "daisyui" {
     themes:
-        coffee --default --prefersdark,
+        light --preferslight,
         dark,
-        light --preferslight;
+        synthwave,
+        retro,
+        halloween,
+        forest,
+        aqua,
+        black,
+        luxury,
+        dracula,
+        business,
+        night,
+        coffee --default --prefersdark,
+        dim,
+        sunset,
+        abyss,
+        cyberpunk;
+
     logs: true;
 }
+
+/* const themes = [
+  'light', 'dark', 'synthwave', 'retro', 'cyberpunk',
+  'halloween', 'forest', 'aqua', 'black', 'luxury',
+  'dracula', 'business', 'night', 'coffee', 'dim',
+  'sunset', 'abyss'
+]
+</script> */

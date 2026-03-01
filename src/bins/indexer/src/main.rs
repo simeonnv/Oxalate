@@ -121,10 +121,6 @@ async fn main() {
         .build()
         .unwrap();
 
-    search_text("hello", wreq_client.to_owned(), db_pool.to_owned())
-        .await
-        .unwrap();
-
     let state = AppState {
         db_pool,
         kafka_producer_client: client,
