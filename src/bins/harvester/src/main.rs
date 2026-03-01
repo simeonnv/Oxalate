@@ -178,12 +178,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ENVVARS.private_harvester_port,
     );
 
-    // DEVELOPMENT ONLY
-    let cors = cors::CorsLayer::new()
-        .allow_methods(Any)
-        .allow_origin(Any)
-        .allow_headers(Any);
-
     let priv_app_state = app_state.clone();
     let priv_shutdown = app_state.shutdown.to_owned();
     tokio::spawn(async move {
@@ -191,7 +185,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let router = Router::new()
             .merge(private_endpoints(&priv_app_state))
             .with_state(priv_app_state.to_owned())
-            .layer(cors)
             .layer(TraceLayer::new_for_http())
             .layer(from_fn_with_state(priv_app_state, logging_middleware));
 
