@@ -128,15 +128,8 @@ async fn main() {
         wreq_client,
     };
 
-    // DEVELOPMENT ONLY
-    let cors = cors::CorsLayer::new()
-        .allow_methods(Any)
-        .allow_origin(Any)
-        .allow_headers(Any);
-
     let app = Router::new()
         .merge(endpoints::endpoints(&state))
-        .layer(cors)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(format!(
