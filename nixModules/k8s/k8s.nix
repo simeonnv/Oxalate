@@ -22,7 +22,7 @@
               docker
             ]
             ++ (with self.kubenixModules; [
-              indexer
+              pods
             ]);
           docker.registry.url = "localhost:5000";
         };

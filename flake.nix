@@ -14,6 +14,8 @@
     naersk.url = "github:nix-community/naersk";
 
     kubenix.url = "github:hall/kubenix";
+
+    servo.url = "github:simeonnv/Servo";
   };
 
   outputs = inputs:

@@ -1,0 +1,22 @@
+[config]
+gateway_name = "give me a name vro"
+listens = ["0.0.0.0:54321"]
+log_level = "INFO"
+
+[[servers]]
+name = "test"
+downstream_hosts = ["someaddress.com", "0.0.0.0:54321"]
+
+[servers.auth]
+public_pem_http_url = "http://0.0.0.0:25025/public_pem"
+check_duration = 10000
+
+[[servers.locations]]
+endpoints = ["/", "/{*any}"]
+blacklisted_endpoints = ["/auth/public_pem"]
+max_requests_per_sec = 10
+proxy_passes = ["192.168.1.103:8080"]
+health_check = true
+health_check_frequency = 3000
+requires_jwt = true
+jwt_allowed_roles = ["user"]
