@@ -1,52 +1,22 @@
 {
   pkgs,
   lib,
+  inputs,
   ...
-}: {
+}: let
+  inherit (inputs.self.lib) getDeps;
+in {
   perSystem = {
     config,
     pkgs,
     system,
     ...
-  }: {
+  }: let
+    deps = getDeps pkgs lib;
+  in {
     devShells.default = pkgs.mkShell {
-      nativeBuildInputs = with pkgs; [
-        direnv
-        pkg-config
-        bun
-        cmake
-        gcc
-        perl
-        automake
-        sqlx-cli
-      ];
-
-      buildInputs = with pkgs;
-        [
-          cargo
-          rustc
-          rustfmt
-          clippy
-          rust-analyzer
-          openssl
-          zstd
-          lz4
-          zlib
-          curl
-          cyrus_sasl
-          libclang
-          llvm
-        ]
-        ++ lib.optionals pkgs.stdenv.isLinux [
-          libX11
-          libXext
-          libXinerama
-          libXcursor
-          libXrender
-          libXfixes
-          libXi
-          libXtst
-        ];
+      nativeBuildInputs = (deps.nativeBuildInputs or []) ++ (deps.devTools or []);
+      buildInputs = deps.buildInputs or [];
 
       shellHook = ''
         export RUST_SRC_PATH="${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}"

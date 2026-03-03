@@ -4,7 +4,7 @@
   self,
   ...
 }: {
-  flake.lib.buildRustBin = {
+  flake.lib.buildRustApp = {
     pkgs,
     lib,
     ...
@@ -15,9 +15,9 @@
     naersk-lib.buildPackage ({
         pname = name;
         version = "0.1.0";
-        src = ./..;
+        src = ./../..;
         SQLX_OFFLINE = "true";
-        SQLX_OFFLINE_DIR = ./.. + "/.sqlx";
+        SQLX_OFFLINE_DIR = ./../.. + "/.sqlx";
 
         preBuild = ''
           export SET_MAKE_JOBS=$NIX_BUILD_CORES

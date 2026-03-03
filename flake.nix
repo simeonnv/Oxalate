@@ -12,6 +12,8 @@
     import-tree.url = "github:vic/import-tree";
 
     naersk.url = "github:nix-community/naersk";
+
+    kubenix.url = "github:hall/kubenix";
   };
 
   outputs = inputs:
