@@ -1,24 +1,11 @@
-<script lang="ts">
-
-
-declare module 'nuxt/app' {
-  interface NuxtLayouts {
-    'default': unknown
-  }
-}
-// ---cut---
+<script lang="ts" setup>
 definePageMeta({
-  layout: 'default',
-})
-
+  layout: "default",
+});
 </script>
 
-
-
 <template>
-  
-    <NuxtLayout>
-      <NuxtPage/>
-    </NuxtLayout>
-  
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
