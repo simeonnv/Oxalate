@@ -38,6 +38,8 @@ in {
       admin-ui = mkNpmDocker pkgs "oxalate-admin-ui-server" oxalateApps.admin-ui "3000";
       frontend = mkNpmDocker pkgs "oxalate-frontend-server" oxalateApps.admin-ui "4000";
     };
+
+    servoPkgs = inputs'.servo.packages;
   in {
     packages = {
       harvester-app = oxalateApps.harvester;
@@ -51,6 +53,11 @@ in {
       indexer-image = images.indexer;
       admin-ui-image = images.admin-ui;
       frontend-image = images.frontend;
+
+      servo-app = servoPkgs.servo-app;
+      servo-image = servoPkgs.servo-image;
+      auth-app = servoPkgs.auth-app;
+      auth-image = servoPkgs.auth-image;
 
       default = oxalateApps.indexer;
     };
@@ -75,6 +82,14 @@ in {
       frontend = {
         type = "app";
         program = lib.getExe oxalateApps.frontend;
+      };
+      servo = {
+        type = "app";
+        program = lib.getExe servoPkgs.servo-app;
+      };
+      auth = {
+        type = "app";
+        program = lib.getExe servoPkgs.auth-app;
       };
     };
   };

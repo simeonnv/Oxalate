@@ -7,7 +7,7 @@
     nativeBuildInputs = with pkgs; [
       direnv
       pkg-config
-      bun
+      nodejs_25
       cmake
       gcc
       perl
