@@ -1,10 +1,37 @@
 services:
+  oxalate-frontend:
+    image: oxalate-frontend-server:latest
+    environment:
+      - PORT=3000
+      - NITRO_PORT=3000
+      - HOST=0.0.0.0
+    env_file:
+      - ./.env
+    ports:
+      - 3000:3000
+    networks:
+      - oxalate-network
+
+  oxalate-admin-ui:
+    image: oxalate-frontend-server:latest
+    environment:
+      - PORT=3001
+      - NITRO_PORT=3001
+      - HOST=0.0.0.0
+    env_file:
+      - ./.env
+    ports:
+      - 3001:3001
+    networks:
+      - oxalate-network
+      
   oxalate-harvester:
     image: oxalate-harvester-server:latest
     env_file:
       - ./.env
     volumes:
       - ./urls.txt:/urls.txt
+      - ./db:/db
     working_dir: /
     ports:
       - 6767:6767
@@ -46,6 +73,30 @@ services:
     networks:
       - oxalate-network
     restart: unless-stopped
+    
+  oxalate-servo:
+    image: servo-server:latest
+    volumes:
+      - ./Servo.toml:/Servo.toml
+    env_file:
+      - ./.env
+    ports:
+      - "21212:21212"
+    networks:
+      - oxalate-network
+    restart: unless-stopped
+
+  oxalate-auth:
+    image: auth-server:latest
+    volumes:
+      - ./Servo.toml:/Servo.toml
+    env_file:
+      - ./.env
+    ports:
+      - "8989:8989"
+    networks:
+      - oxalate-network
+    restart: unless-stopped
 
   oxalate-redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
@@ -66,6 +117,25 @@ services:
     env_file:
       - ./.env
 
+  oxalate-neo4j:
+    image: neo4j:latest
+    volumes:
+        - oxalate_neo4j_data:/logs
+        - oxalate_neo4j_data:/config
+        - oxalate_neo4j_data:/data
+        - oxalate_neo4j_data:/plugins
+    environment:
+      - NEO4J_server_config_strict__validation_enabled=false
+      - NEO4J_PLUGINS=["apoc"]
+    env_file:
+      - ../.env
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    restart: always
+
+
+
 networks:
   oxalate-network:
   app-network:
@@ -74,7 +144,7 @@ networks:
 volumes:
   oxalate_paradedb_data:
   oxalate_redpanda_data:
-
+  oxalate_neo4j_data:
 # oxalate-harvester-server:latest                    7ba4f1ba23f9        935MB          465MB
 # oxalate-indexer-server:latest                      84252bbc2958        935MB          465MB
 # oxalate-outlet-server:latest                       8ebd162dba3b        935MB          465MB
