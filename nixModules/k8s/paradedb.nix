@@ -31,6 +31,28 @@
           spec = {
             containers.paradedb = {
               # ENV = {}; # TODO
+
+              env = [
+                {
+                  name = "POSTGRES_USER";
+                  valueFrom.secretKeyRef = {
+                    name = "db-creds";
+                    key = "postgres_user";
+                  };
+                }
+                {
+                  name = "POSTGRES_PASSWORD";
+                  valueFrom.secretKeyRef = {
+                    name = "db-creds";
+                    key = "postgres_password";
+                  };
+                }
+                {
+                  name = "POSTGRES_DB";
+                  value = "Oxalate";
+                }
+              ];
+
               image = "paradedb/paradedb:latest";
               ports = [
                 {

@@ -1,10 +1,11 @@
 use std::{fmt, net::IpAddr, str::FromStr, time::Duration};
 
 use axum::Router;
+use envconfig::Envconfig;
 use kafka_writer_rs::KafkaLogWriter;
 use log_json_serializer::parse_log;
 use neo4rs::Graph;
-use oxalate_env::ENVVARS;
+use oxalate_env::load_env_vars;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
 use tokio::time::sleep;
@@ -27,6 +28,58 @@ pub struct AppState {
     pub neo4j_pool: Graph,
     pub kafka_producer_client: Option<FutureProducer>,
     pub wreq_client: wreq::Client,
+}
+
+#[derive(Envconfig)]
+pub struct EnvVars {
+    #[envconfig(from = "RUST_LOG", default = "info")]
+    pub rust_log: String,
+
+    // Kafka
+    #[envconfig(from = "KAFKA_PORT", default = "19092")]
+    pub kafka_port: u16,
+    #[envconfig(from = "KAFKA_DNS")] // , default = "oxalate_redpanda"
+    pub kafka_dns: Option<String>, // depending if this is none you can disable kafka logging
+    #[envconfig(from = "KAFKA_MESSAGE_TIMEOUT_MS", default = "5000")]
+    pub kafka_message_timeout_ms: u64,
+
+    #[envconfig(from = "KAFKA_INDEXER_LOGS_TOPIC", default = "indexer_logs")]
+    pub kafka_indexer_logs_topic: String,
+    #[envconfig(from = "KAFKA_OUTLET_LOGS_TOPIC", default = "outlet_logs")]
+    pub kafka_outlet_logs_topic: String,
+
+    // Neo4j
+    #[envconfig(from = "NEO4J_AUTH", default = "neo4j/rootrootroot")]
+    pub neo4j_auth: String,
+    #[envconfig(from = "NEO4J_PORT", default = "7687")]
+    pub neo4j_port: u16,
+    #[envconfig(from = "NEO4J_DNS")]
+    pub neo4j_dns: String,
+
+    // Postgres
+    #[envconfig(from = "POSTGRES_USER")]
+    pub postgres_user: String,
+    #[envconfig(from = "POSTGRES_PASSWORD")]
+    pub postgres_password: String,
+    #[envconfig(from = "POSTGRES_DB")]
+    pub postgres_db: String,
+
+    #[envconfig(from = "DB_DNS", default = "oxalate-paradedb")]
+    pub db_dns: String,
+    #[envconfig(from = "DB_PORT", default = "6666")]
+    pub db_port: u16,
+    #[envconfig(from = "POOL_MAX_CONN", default = "25")]
+    pub pool_max_conn: u32,
+
+    // Indexer
+    #[envconfig(from = "INDEXER_BIND_ADDRESS", default = "0.0.0.0")]
+    pub indexer_bind_address: IpAddr,
+    #[envconfig(from = "INDEXER_PORT", default = "22267")]
+    pub indexer_port: u16,
+}
+
+lazy_static::lazy_static! {
+    pub static ref ENVVARS: EnvVars = load_env_vars();
 }
 
 impl fmt::Debug for AppState {
@@ -100,7 +153,7 @@ async fn main() {
         let mut parts = ENVVARS.neo4j_auth.split("/");
         let user = parts.next().unwrap_or("root");
         let password = parts.next().unwrap_or("root");
-        let url = format!("{}:{}", ENVVARS.neo4j_bind_address, ENVVARS.neo4j_port);
+        let url = format!("{}:{}", ENVVARS.neo4j_dns, ENVVARS.neo4j_port);
         loop {
             match Graph::new(&url, user, password).await {
                 Err(err) => {

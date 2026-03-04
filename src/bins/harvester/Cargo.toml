@@ -46,3 +46,5 @@ kafka_writer_rs = { workspace = true }
 oxalate_env = { workspace = true}
 
 neo4rs = { workspace = true }
+envconfig = { workspace = true }
+lazy_static = { workspace = true }

@@ -1,14 +1,21 @@
 use axum::{Router, middleware::from_fn_with_state};
+use envconfig::Envconfig;
 use kafka_writer_rs::KafkaLogWriter;
 use log::info;
 use log_json_serializer::parse_log;
 use neo4rs::Graph;
-use oxalate_env::ENVVARS;
+use oxalate_env::load_env_vars;
+// use oxalate_env::ENVVARS;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
 use rdkafka::{ClientConfig, producer::FutureProducer};
 use sqlx::{Pool, Postgres};
-use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    net::{IpAddr, SocketAddr},
+    path::PathBuf,
+    sync::Arc,
+    time::Duration,
+};
 use tokio::time::sleep;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::{
@@ -58,6 +65,68 @@ pub struct AppState {
 pub struct Shutdown {
     pub task_tracker: TaskTracker,
     pub token: CancellationToken,
+}
+
+#[derive(Envconfig)]
+pub struct EnvVars {
+    #[envconfig(from = "RUST_LOG", default = "info")]
+    pub rust_log: String,
+
+    // kafka
+    #[envconfig(from = "KAFKA_PORT", default = "19092")]
+    pub kafka_port: u16,
+
+    #[envconfig(from = "KAFKA_DNS")] // , default = "oxalate_redpanda"
+    pub kafka_dns: Option<String>, // depending if this is none you can disable kafka logging
+
+    #[envconfig(from = "KAFKA_MESSAGE_TIMEOUT_MS", default = "5000")]
+    pub kafka_message_timeout_ms: u64,
+
+    #[envconfig(from = "KAFKA_HARVESTER_LOGS_TOPIC", default = "harvester_logs")]
+    pub kafka_harvester_logs_topic: String,
+
+    // Postgres
+    #[envconfig(from = "POSTGRES_USER")]
+    pub postgres_user: String,
+    #[envconfig(from = "POSTGRES_PASSWORD")]
+    pub postgres_password: String,
+    #[envconfig(from = "POSTGRES_DB")]
+    pub postgres_db: String,
+
+    #[envconfig(from = "DB_DNS", default = "oxalate-paradedb")]
+    pub db_dns: String,
+    #[envconfig(from = "DB_PORT", default = "6666")]
+    pub db_port: u16,
+    #[envconfig(from = "POOL_MAX_CONN", default = "25")]
+    pub pool_max_conn: u32,
+
+    // neo4j
+    #[envconfig(from = "NEO4J_AUTH", default = "neo4j/rootrootroot")]
+    pub neo4j_auth: String,
+    #[envconfig(from = "NEO4J_PORT", default = "7687")]
+    pub neo4j_port: u16,
+    #[envconfig(from = "NEO4J_DNS")]
+    pub neo4j_dns: String,
+
+    // harvester
+    // Public Harvester
+    #[envconfig(from = "PUBLIC_HARVESTER_BIND_ADDRESS", default = "0.0.0.0")]
+    pub public_harvester_bind_address: IpAddr,
+    #[envconfig(from = "PUBLIC_HARVESTER_PORT", default = "6767")]
+    pub public_harvester_port: u16,
+
+    // Private Harvester
+    #[envconfig(from = "PRIVATE_HARVESTER_BIND_ADDRESS", default = "0.0.0.0")]
+    pub private_harvester_bind_address: IpAddr,
+    #[envconfig(from = "PRIVATE_HARVESTER_PORT", default = "6969")]
+    pub private_harvester_port: u16,
+
+    #[envconfig(from = "URLS_FILE", default = "./urls.txt")]
+    pub urls_file: PathBuf,
+}
+
+lazy_static::lazy_static! {
+    pub static ref ENVVARS: EnvVars = load_env_vars();
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -119,7 +188,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut parts = ENVVARS.neo4j_auth.split("/");
         let user = parts.next().unwrap_or("root");
         let password = parts.next().unwrap_or("root");
-        let url = format!("{}:{}", ENVVARS.neo4j_bind_address, ENVVARS.neo4j_port);
+        let url = format!("{}:{}", ENVVARS.neo4j_dns, ENVVARS.neo4j_port);
         loop {
             match Graph::new(&url, user, password).await {
                 Err(err) => {

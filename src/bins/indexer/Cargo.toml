@@ -34,3 +34,4 @@ scraper = { workspace = true }
 async-trait = { workspace = true }
 rand = { version = "0.10.0" }
 base64 = { version = "0.22.1" }
+envconfig = { workspace = true }

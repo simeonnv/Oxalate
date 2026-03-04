@@ -36,8 +36,6 @@ services:
     image: paradedb/paradedb:latest
     env_file:
       - ./.env
-    environment:
-      POSTGRES_DB: ${POSTGRES_NAME}
     volumes:
       - oxalate_paradedb_data:/var/lib/postgresql
     labels:

@@ -323,11 +323,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1772614283,
-        "narHash": "sha256-RsV7Pw28KWAlSdWCenK9u5tnkQl4oAKJHQhemC2Tf4c=",
+        "lastModified": 1772642794,
+        "narHash": "sha256-P2Y3z+y017Lav2Fthi3pN13hPg3WFPlGOBLQLhOT+yY=",
         "owner": "simeonnv",
         "repo": "Servo",
-        "rev": "406056473337263bcefd4ac6291d9b01f125f5e8",
+        "rev": "266e2f2e73041f49bf89bca51f720fa11f400124",
         "type": "github"
       },
       "original": {
