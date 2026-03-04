@@ -51,10 +51,12 @@
                 {
                   containerPort = 19092;
                   protocol = "TCP";
+                  name = "kafka";
                 }
                 {
                   containerPort = 18082;
                   protocol = "TCP";
+                  name = "redpanda";
                 }
               ];
               volumeMounts = [
@@ -76,10 +78,12 @@
           {
             port = 19092;
             protocol = "TCP";
+            name = "kafka";
           }
           {
             port = 18082;
             protocol = "TCP";
+            name = "redpanda";
           }
         ];
       };
