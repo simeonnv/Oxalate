@@ -65,28 +65,5 @@
         ];
       };
     };
-    # kubernetes.resources.services = {
-    #   servo.spec = {
-    #     selector.app = "servo";
-    #     ports = [
-    #       {
-    #         port = 80;
-    #         protocol = "TCP";
-    #       }
-    #       {
-    #         port = 80;
-    #         protocol = "UDP";
-    #       }
-    #       {
-    #         port = 443;
-    #         protocol = "TCP";
-    #       }
-    #       {
-    #         port = 443;
-    #         protocol = "UDP";
-    #       }
-    #     ];
-    #   };
-    # };
   };
 }

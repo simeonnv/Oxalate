@@ -44,6 +44,18 @@
       k8s = kubenixEval.config.kubernetes.result;
 
       push-images = kubenixEval.config.docker.copyScript;
+
+      deploy = pkgs.writeShellScriptBin "deploy" ''
+        set -e
+
+        echo "Decrypting secrets with vals and applying to Kubernetes..."
+
+        cat ${kubenixEval.config.kubernetes.result} | \
+        ${pkgs.vals}/bin/vals eval -f - | \
+        ${pkgs.kubectl}/bin/kubectl apply -f -
+
+        echo "Done"
+      '';
     };
   };
 }
