@@ -12,21 +12,38 @@
     system,
     self',
     ...
-  }: {
-    packages.k8s =
-      (inputs.kubenix.evalModules.${system} {
-        module = {kubenix, ...}: {
-          imports = with kubenix.modules;
-            [
-              k8s
-              docker
-            ]
-            ++ (with self.kubenixModules; [
-              pods
-            ]);
-          docker.registry.url = "localhost:5000";
+  }: let
+    kubenixEval = inputs.kubenix.evalModules.${system} {
+      module = {kubenix, ...}: {
+        kubenix.project = "Oxalate";
+        imports = with kubenix.modules;
+          [k8s docker]
+          ++ (with self.kubenixModules; [
+            pods
+            docker
+            paradedb
+            servo
+            neo4j
+            authpg
+            redpanda
+            indexer
+          ]);
+
+        kubernetes.resources.secrets.db-creds.stringData = {
+          postgres_user = "ref+sops://sops_secrets.yaml?key=env.postgres_user";
+          postgres_password = "ref+sops://sops_secrets.yaml?key=env.postgres_password";
+          neo4j_auth = "ref+sops://sops_secrets.yaml?key=env.neo4j_auth";
         };
-        specialArgs = {inherit self';};
-      }).config.kubernetes.result;
+
+        docker.registry.url = "localhost:5000";
+      };
+      specialArgs = {inherit self';};
+    };
+  in {
+    packages = {
+      k8s = kubenixEval.config.kubernetes.result;
+
+      push-images = kubenixEval.config.docker.copyScript;
+    };
   };
 }
