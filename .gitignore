@@ -25,3 +25,4 @@ db*
 #.idea/
 db/
 .direnv
+secrets.yaml
