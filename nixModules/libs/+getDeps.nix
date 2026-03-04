@@ -5,6 +5,14 @@
 }: {
   flake.lib.getDeps = pkgs: lib: {
     nativeBuildInputs = with pkgs; [
+      go
+      ninja
+      patch
+      stdenv.cc
+      nasm
+      git
+      clang
+
       direnv
       pkg-config
       nodejs_25
@@ -13,6 +21,9 @@
       perl
       automake
       sqlx-cli
+      llvm
+      cyrus_sasl
+      libclang
     ];
 
     buildInputs = with pkgs;

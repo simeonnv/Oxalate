@@ -8,6 +8,7 @@
       name = imageName;
       tag = "latest";
       contents = with pkgs; [cacert openssl boringssl];
+
       config = {
         Cmd = ["${binPkg}/bin/${binName}"];
         ExposedPorts = lib.genAttrs (map (p: "${p}/tcp") exposedPorts) (_: {});

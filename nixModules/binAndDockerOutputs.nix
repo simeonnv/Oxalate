@@ -36,7 +36,7 @@ in {
       outlet = mkRustDocker pkgs "oxalate-outlet-server" "oxalate_outlet" oxalateApps.outlet [];
       indexer = mkRustDocker pkgs "oxalate-indexer-server" "oxalate_indexer" oxalateApps.indexer ["22267"];
       admin-ui = mkNpmDocker pkgs "oxalate-admin-ui-server" oxalateApps.admin-ui "3000";
-      frontend = mkNpmDocker pkgs "oxalate-frontend-server" oxalateApps.admin-ui "4000";
+      frontend = mkNpmDocker pkgs "oxalate-frontend-server" oxalateApps.frontend "4000";
     };
 
     servoPkgs = inputs'.servo.packages;

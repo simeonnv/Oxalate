@@ -22,6 +22,12 @@
     inputs.flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         (inputs.import-tree ./nixModules)
+        ({lib, ...}: {
+          options.flake.kubenixModules = lib.mkOption {
+            type = lib.types.lazyAttrsOf lib.types.deferredModule;
+            default = {};
+          };
+        })
       ];
       systems = [
         "x86_64-linux"
