@@ -24,7 +24,6 @@
           metadata.labels.app = "servo";
           spec = {
             containers.servo = {
-              # ENV = {}; # TODO
               image = config.docker.images.servo.path;
               volumeMounts = [
                 {
