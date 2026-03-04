@@ -35,7 +35,7 @@
           neo4j_auth = "ref+sops://sops_secrets.yaml?key=env.neo4j_auth";
         };
 
-        docker.registry.url = "host.minikube.internal:5000";
+        docker.registry.url = "localhost:5000";
       };
       specialArgs = {inherit self';};
     };
