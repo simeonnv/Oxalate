@@ -2286,6 +2286,7 @@ dependencies = [
  "log_json_serializer",
  "neo4rs",
  "oxalate_env",
+ "oxalate_init",
  "oxalate_kv_db",
  "oxalate_schemas",
  "oxalate_scraper_controller",
@@ -2323,6 +2324,7 @@ dependencies = [
  "log_json_serializer",
  "neo4rs",
  "oxalate_env",
+ "oxalate_init",
  "oxalate_schemas",
  "oxalate_utils",
  "rand 0.10.0",
@@ -2340,6 +2342,23 @@ dependencies = [
  "uuid",
  "wreq",
  "wreq-util",
+]
+
+[[package]]
+name = "oxalate_init"
+version = "0.1.0"
+dependencies = [
+ "envconfig",
+ "exn",
+ "fern",
+ "kafka_writer_rs",
+ "log",
+ "log_json_serializer",
+ "neo4rs",
+ "rdkafka",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]
@@ -2370,17 +2389,22 @@ dependencies = [
  "async-scoped",
  "chrono",
  "craftping",
+ "envconfig",
  "fern",
  "futures",
  "futures-util",
+ "lazy_static",
  "log",
  "log_json_serializer",
  "machine-uid",
  "muddy",
  "once_cell",
+ "oxalate_env",
+ "oxalate_init",
  "oxalate_keylogger",
  "oxalate_schemas",
  "oxalate_scraper_controller",
+ "rand 0.10.0",
  "reqwest",
  "serde",
  "serde_json",

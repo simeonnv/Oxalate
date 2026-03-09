@@ -1,0 +1,17 @@
+[package]
+name = "oxalate_init"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+exn = { workspace = true }
+rdkafka = { workspace = true }
+fern = { workspace = true }
+log_json_serializer = { workspace = true }
+kafka_writer_rs = { workspace = true }
+neo4rs = { workspace = true }
+envconfig = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }

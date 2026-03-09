@@ -31,6 +31,7 @@ futures-util = { workspace = true }
 oxalate_schemas = { workspace = true }
 oxalate_scraper_controller = { workspace = true }
 oxalate_kv_db = { workspace = true }
+oxalate_init = { workspace = true }
 
 dashmap = { workspace = true }
 tower-http = { version = "0.6.7", features = ["cors", "trace"] }
@@ -48,3 +49,4 @@ oxalate_env = { workspace = true}
 neo4rs = { workspace = true }
 envconfig = { workspace = true }
 lazy_static = { workspace = true }
+

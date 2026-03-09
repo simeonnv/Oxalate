@@ -1,14 +1,13 @@
 use axum::{Router, middleware::from_fn_with_state};
 use envconfig::Envconfig;
-use kafka_writer_rs::KafkaLogWriter;
 use log::info;
-use log_json_serializer::parse_log;
 use neo4rs::Graph;
 use oxalate_env::load_env_vars;
+use oxalate_init::{init_kafka_producer, init_logger, init_neo4j_pool, init_postgres_pool};
 // use oxalate_env::ENVVARS;
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;
-use rdkafka::{ClientConfig, producer::FutureProducer};
+use rdkafka::producer::FutureProducer;
 use sqlx::{Pool, Postgres};
 use std::{
     net::{IpAddr, SocketAddr},
@@ -32,9 +31,6 @@ pub use public_endpoints::public_endpoints;
 pub mod private_endpoints;
 pub use private_endpoints::private_endpoints;
 
-mod create_postgres_pool;
-pub use create_postgres_pool::create_postgres_pool;
-
 pub mod save_scraper_controller;
 pub use save_scraper_controller::save_scraper_controller;
 
@@ -56,6 +52,7 @@ pub struct AppState {
     pub shutdown: Arc<Shutdown>,
     pub kafka_outlet_producer: Option<FutureProducer>,
     pub kv_db: KvDb,
+    pub env_vars: &'static EnvVars,
 }
 
 #[derive(Default)]
@@ -122,82 +119,43 @@ pub struct EnvVars {
     pub urls_file: PathBuf,
 }
 
-lazy_static::lazy_static! {
-    pub static ref ENVVARS: EnvVars = load_env_vars();
-}
-
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = ENVVARS.rust_log;
+    let env_vars: &'static EnvVars = load_env_vars();
 
-    let producer: Option<FutureProducer> = ENVVARS.kafka_dns.as_ref().map(|dns| {
-        let kafka_connect_url = format!("{}:{}", dns, ENVVARS.kafka_port);
-        println!("kafka connect url is: {kafka_connect_url}");
-        let client = ClientConfig::new()
-            .set("bootstrap.servers", kafka_connect_url)
-            .set(
-                "message.timeout.ms",
-                ENVVARS.kafka_message_timeout_ms.to_string(),
-            )
-            .create()
-            .expect("failed to create kafka client");
-        println!("connected to kafka and inited kafka future producer");
-        client
-    });
-
-    let fern = fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "{}",
-                parse_log(message, record).expect("failed to serialize log into json")
-            ));
-        })
-        .level(log::LevelFilter::Info)
-        .chain(std::io::stdout());
-    let fern = {
-        match producer {
-            Some(ref client) => {
-                let kafka_writer = Box::new(
-                    KafkaLogWriter::new(client.to_owned(), &ENVVARS.kafka_harvester_logs_topic)
-                        .await,
-                );
-
-                fern.chain(fern::Output::writer(kafka_writer, "\n"))
-            }
-            _ => fern,
+    let producer: Option<FutureProducer> = match env_vars.kafka_dns.as_ref() {
+        Some(dns) => {
+            let p =
+                init_kafka_producer(dns, env_vars.kafka_port, env_vars.kafka_message_timeout_ms)
+                    .await
+                    .expect("failed to init kafka producer");
+            Some(p)
         }
+        None => None,
     };
-    fern.apply().expect("failed to create logger");
-    log::info!("inited logger");
 
-    let db_pool = create_postgres_pool(
-        &ENVVARS.postgres_user,
-        &ENVVARS.postgres_password,
-        &ENVVARS.db_dns,
-        ENVVARS.db_port,
-        &ENVVARS.postgres_db,
-        ENVVARS.pool_max_conn,
+    init_logger(
+        env_vars.kafka_harvester_logs_topic.to_owned(),
+        producer.to_owned(),
     )
-    .await
-    .unwrap();
+    .await;
 
-    let neo4j_pool = {
-        let mut parts = ENVVARS.neo4j_auth.split("/");
-        let user = parts.next().unwrap_or("root");
-        let password = parts.next().unwrap_or("root");
-        let url = format!("{}:{}", ENVVARS.neo4j_dns, ENVVARS.neo4j_port);
-        loop {
-            match Graph::new(&url, user, password).await {
-                Err(err) => {
-                    log::error!("failed to connect to log4j: {err}, retrying in a few secs");
-                    sleep(Duration::from_secs(30)).await;
-                    continue;
-                }
-                Ok(e) => break e,
-            }
-        }
-    };
-    log::info!("log4j inited");
+    let db_pool = init_postgres_pool(
+        &env_vars.postgres_user,
+        &env_vars.postgres_password,
+        &env_vars.db_dns,
+        env_vars.db_port,
+        &env_vars.postgres_db,
+        env_vars.pool_max_conn,
+    )
+    .await;
+
+    let neo4j_pool = init_neo4j_pool(
+        &env_vars.neo4j_auth,
+        &env_vars.neo4j_dns,
+        env_vars.neo4j_port,
+    )
+    .await;
 
     let kv_db = KvDb::new(&PathBuf::from("./db")).unwrap();
     let app_state_kv_db = kv_db.clone();
@@ -207,19 +165,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app_state = AppState {
         scraper_controller,
-        proxy_settings_store: Arc::new(ProxySettingsStore::new(&ENVVARS.urls_file).unwrap()),
+        proxy_settings_store: Arc::new(ProxySettingsStore::new(&env_vars.urls_file).unwrap()),
         shutdown: Arc::new(Shutdown::default()),
         kafka_outlet_producer: producer,
         kv_db: app_state_kv_db,
         proxy_connection_store: Arc::new(ProxyConnectionStore::default()),
         neo4j_pool,
         db_pool,
+        env_vars,
     };
 
     // create the public http server
     let public_addr = SocketAddr::new(
-        ENVVARS.public_harvester_bind_address,
-        ENVVARS.public_harvester_port,
+        env_vars.public_harvester_bind_address,
+        env_vars.public_harvester_port,
     );
     let pub_app_state = app_state.clone();
     let pub_shutdown = app_state.shutdown.to_owned();
@@ -240,8 +199,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // create the pub http server
     let private_addr = SocketAddr::new(
-        ENVVARS.private_harvester_bind_address,
-        ENVVARS.private_harvester_port,
+        env_vars.private_harvester_bind_address,
+        env_vars.private_harvester_port,
     );
 
     let priv_app_state = app_state.clone();

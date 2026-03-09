@@ -6,6 +6,7 @@ members = [
     "src/bins/outlet",
     "src/libs/env",
     "src/libs/http_error",
+    "src/libs/init",
     "src/libs/keylogger",
     "src/libs/kv_db",
     "src/libs/schemas",
@@ -21,6 +22,7 @@ oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
 oxalate_env = { path = "src/libs/env" }
 oxalate_utils = { path = "src/libs/utils" }
+oxalate_init = { path = "src/libs/init" }
 
 http_error = { path = "src/libs/http_error" }
 
@@ -84,6 +86,7 @@ neo4rs = { version = "0.8.0" }
 
 # util
 itertools = { version = "0.14.0" }
+rand = { version = "0.10.0"}
 
 # build
 cmake = { version = "0.1.57" }
