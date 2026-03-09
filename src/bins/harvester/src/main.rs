@@ -18,10 +18,7 @@ use std::{
 };
 use tokio::time::sleep;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
-use tower_http::{
-    cors::{self, Any},
-    trace::TraceLayer,
-};
+use tower_http::trace::TraceLayer;
 
 mod proxy_connection_store;
 pub use proxy_connection_store::ProxyConnectionStore;
