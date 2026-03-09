@@ -1,6 +1,7 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::collections::HashMap;
+use std::time::Duration;
 
-use crate::{GlobalState, HARVESTER_URL};
+use crate::AppState;
 
 use futures::future;
 use futures::stream::{self, StreamExt};
@@ -10,9 +11,12 @@ use oxalate_scraper_controller::scraper_controller::{HttpRes, ProxyReq, ProxyRes
 use reqwest::{Client, Url};
 use tokio::time::sleep;
 
-pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
+pub fn proxy(reqwest_client: Client, global_state: AppState) {
     tokio::spawn(async move {
-        let url = format!("http://{}/proxy", *HARVESTER_URL);
+        let url = format!(
+            "http://{}:{}/proxy",
+            global_state.env_vars.public_harvester_dns, global_state.env_vars.public_harvester_port
+        );
         loop {
             info!("requesting urls");
             let res = match reqwest_client
@@ -136,7 +140,7 @@ pub fn proxy(reqwest_client: Client, global_state: Arc<GlobalState>) {
 async fn handle_http_https_request(
     reqwest_client: &Client,
     url: Url,
-    global_state: &GlobalState,
+    global_state: &AppState,
 ) -> Option<Box<ProxyRes>> {
     // dbg!(&url);
     let res = reqwest_client

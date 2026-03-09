@@ -27,3 +27,10 @@ systemstat = "0.2.5"
 futures = { workspace = true }
 fern = { workspace = true }
 log_json_serializer = { workspace = true }
+
+envconfig = { workspace = true }
+oxalate_env = { workspace = true }
+lazy_static = { workspace = true }
+
+rand = { workspace = true }
+oxalate_init = { workspace = true }
