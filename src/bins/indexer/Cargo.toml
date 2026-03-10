@@ -27,7 +27,6 @@ kafka_writer_rs = { workspace = true }
 tower-http = { version = "0.6.8", features = ["cors"] }
 oxalate_env = { workspace = true }
 neo4rs = { workspace = true }
-oxalate_utils = { workspace = true }
 wreq = { workspace = true }
 wreq-util = { workspace = true }
 scraper = { workspace = true }
@@ -36,3 +35,4 @@ rand = { version = "0.10.0" }
 base64 = { version = "0.22.1" }
 envconfig = { workspace = true }
 oxalate_init = { workspace = true }
+oxalate_parsing = { workspace = true }

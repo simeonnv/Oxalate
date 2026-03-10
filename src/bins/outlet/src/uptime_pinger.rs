@@ -13,14 +13,11 @@ pub fn uptime_pinger(global_state: AppState) {
     tokio::spawn(async move {
         let url = format!(
             "ws://{}:{}/info/uptime",
-            global_state.env_vars.public_harvester_dns, global_state.env_vars.public_harvester_port
+            global_state.env_vars.harvester_dns, global_state.env_vars.public_harvester_port
         );
         let request = Request::builder()
             .uri(&url)
-            .header(
-                "Host",
-                global_state.env_vars.public_harvester_dns.to_owned(),
-            )
+            .header("Host", global_state.env_vars.harvester_dns.to_owned())
             .header("Connection", "Upgrade")
             .header("Upgrade", "websocket")
             .header("Sec-WebSocket-Version", "13")

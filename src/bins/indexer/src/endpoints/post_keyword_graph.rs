@@ -4,11 +4,10 @@ use axum::{Json, extract::State};
 use exn::ResultExt;
 use http_error::HttpError;
 
-use neo4rs::query;
-use oxalate_schemas::indexer::post_keyword_graph::{Node, Relation, Req, Res};
-use oxalate_utils::parse_into_words;
-
 use crate::AppState;
+use neo4rs::query;
+use oxalate_parsing::split_into_words::split_into_words;
+use oxalate_schemas::indexer::post_keyword_graph::{Node, Relation, Req, Res};
 
 #[utoipa::path(
     post,
@@ -24,7 +23,7 @@ pub async fn post_keyword_graph(
     State(state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<Json<Res>, HttpError> {
-    let keywords = parse_into_words(req.text);
+    let keywords = split_into_words(&req.text);
 
     let row_stream = state
         .neo4j_pool

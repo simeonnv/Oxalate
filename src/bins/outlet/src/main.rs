@@ -36,8 +36,8 @@ pub struct EnvVars {
     #[envconfig(from = "PUBLIC_HARVESTER_PORT", default = "6767")]
     pub public_harvester_port: u16,
 
-    #[envconfig(from = "HARVESTER_DNS", default = "oxalate_harvester")]
-    pub public_harvester_dns: String,
+    #[envconfig(from = "HARVESTER_DNS")]
+    pub harvester_dns: String,
 
     // kafka
     #[envconfig(from = "KAFKA_PORT", default = "19092")]

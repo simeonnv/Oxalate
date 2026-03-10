@@ -37,8 +37,6 @@ pub struct EnvVars {
 
     #[envconfig(from = "KAFKA_INDEXER_LOGS_TOPIC", default = "indexer_logs")]
     pub kafka_indexer_logs_topic: String,
-    #[envconfig(from = "KAFKA_OUTLET_LOGS_TOPIC", default = "outlet_logs")]
-    pub kafka_outlet_logs_topic: String,
 
     // Neo4j
     #[envconfig(from = "NEO4J_AUTH", default = "neo4j/rootrootroot")]

