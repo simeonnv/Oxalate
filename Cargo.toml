@@ -4,14 +4,15 @@ members = [
     "src/bins/harvester",
     "src/bins/indexer",
     "src/bins/outlet",
+    "src/bins/parser",
     "src/libs/env",
     "src/libs/http_error",
     "src/libs/init",
     "src/libs/keylogger",
     "src/libs/kv_db",
+    "src/libs/parsing",
     "src/libs/schemas",
     "src/libs/scraper_controller",
-    "src/libs/utils",
 ]
 
 
@@ -21,8 +22,8 @@ oxalate_scraper_controller = { path = "src/libs/scraper_controller" }
 oxalate_schemas = { path = "src/libs/schemas" }
 oxalate_kv_db = { path = "src/libs/kv_db" }
 oxalate_env = { path = "src/libs/env" }
-oxalate_utils = { path = "src/libs/utils" }
 oxalate_init = { path = "src/libs/init" }
+oxalate_parsing = { path = "src/libs/parsing" }
 
 http_error = { path = "src/libs/http_error" }
 

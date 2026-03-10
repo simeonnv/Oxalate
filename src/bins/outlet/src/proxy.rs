@@ -15,7 +15,7 @@ pub fn proxy(reqwest_client: Client, global_state: AppState) {
     tokio::spawn(async move {
         let url = format!(
             "http://{}:{}/proxy",
-            global_state.env_vars.public_harvester_dns, global_state.env_vars.public_harvester_port
+            global_state.env_vars.harvester_dns, global_state.env_vars.public_harvester_port
         );
         loop {
             info!("requesting urls");

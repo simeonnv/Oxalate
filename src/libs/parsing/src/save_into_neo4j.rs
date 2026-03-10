@@ -2,24 +2,28 @@ use exn::{Result, ResultExt};
 use itertools::Itertools;
 use neo4rs::{Graph, query};
 
+use crate::ParsedHtml;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("failed to start the neo4j transaction")]
     StartTxn,
+
     #[error("failed to run the queries in the neo4j transaction")]
     RunQueries,
+
     #[error("failed to commit the neo4j transaction")]
     Commit,
 }
 
-pub(crate) async fn save_keywords_in_neo4j(
+pub async fn save_into_neo4j(
     neo4j_pool: &Graph,
-    keywords: &[String],
+    parsed_html: &ParsedHtml,
     url: &str,
     window_size: usize,
 ) -> Result<(), Error> {
     let mut rel_data = Vec::new();
-    for window in keywords.windows(window_size) {
+    for window in parsed_html.keywords.windows(window_size) {
         for (word_1, word_2) in window.iter().tuple_combinations() {
             let (first, second) = if word_1 < word_2 {
                 (word_1, word_2)
@@ -44,7 +48,7 @@ pub(crate) async fn save_keywords_in_neo4j(
         ",
     )
     .param("url", url)
-    .param("words", keywords);
+    .param("words", parsed_html.keywords.to_owned());
 
     let rel_query = query(
         "

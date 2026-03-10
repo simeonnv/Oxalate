@@ -1,4 +1,4 @@
-use std::{fmt, net::IpAddr, str::FromStr, time::Duration};
+use std::{fmt, net::IpAddr};
 
 use axum::Router;
 use envconfig::Envconfig;
@@ -9,17 +9,12 @@ use rdkafka::producer::FutureProducer;
 use sqlx::{Pool, Postgres};
 
 pub mod endpoints;
-pub mod scraping;
-
-use wreq::Client;
-use wreq_util::Emulation;
 
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub neo4j_pool: Graph,
     pub kafka_producer_client: Option<FutureProducer>,
-    pub wreq_client: wreq::Client,
 }
 
 #[derive(Envconfig)]
@@ -35,8 +30,8 @@ pub struct EnvVars {
     #[envconfig(from = "KAFKA_MESSAGE_TIMEOUT_MS", default = "5000")]
     pub kafka_message_timeout_ms: u64,
 
-    #[envconfig(from = "KAFKA_INDEXER_LOGS_TOPIC", default = "indexer_logs")]
-    pub kafka_indexer_logs_topic: String,
+    #[envconfig(from = "KAFKA_PARSER_LOGS_TOPIC", default = "parser_logs")]
+    pub kafka_parser_logs_topic: String,
 
     // Neo4j
     #[envconfig(from = "NEO4J_AUTH", default = "neo4j/rootrootroot")]
@@ -62,9 +57,9 @@ pub struct EnvVars {
     pub pool_max_conn: u32,
 
     // Indexer
-    #[envconfig(from = "INDEXER_BIND_ADDRESS", default = "0.0.0.0")]
+    #[envconfig(from = "PARSER_BIND_ADDRESS", default = "0.0.0.0")]
     pub indexer_bind_address: IpAddr,
-    #[envconfig(from = "INDEXER_PORT", default = "22267")]
+    #[envconfig(from = "PARSER_PORT", default = "11167")]
     pub indexer_port: u16,
 }
 
@@ -97,7 +92,7 @@ async fn main() {
     };
 
     init_logger(
-        env_vars.kafka_indexer_logs_topic.to_owned(),
+        env_vars.kafka_parser_logs_topic.to_owned(),
         producer.to_owned(),
     )
     .await;
@@ -119,18 +114,10 @@ async fn main() {
     )
     .await;
 
-    let wreq_client = Client::builder()
-        .local_address(IpAddr::from_str("0.0.0.0").unwrap())
-        .emulation(Emulation::Firefox139)
-        .timeout(Duration::from_secs(10))
-        .build()
-        .unwrap();
-
     let state = AppState {
         db_pool,
         kafka_producer_client: producer,
         neo4j_pool,
-        wreq_client,
     };
 
     let app = Router::new()

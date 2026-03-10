@@ -2325,8 +2325,8 @@ dependencies = [
  "neo4rs",
  "oxalate_env",
  "oxalate_init",
+ "oxalate_parsing",
  "oxalate_schemas",
- "oxalate_utils",
  "rand 0.10.0",
  "rdkafka",
  "scraper",
@@ -2416,6 +2416,64 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxalate_parser"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "envconfig",
+ "exn",
+ "fern",
+ "futures",
+ "futures-util",
+ "http_error",
+ "lazy_static",
+ "log",
+ "log_json_serializer",
+ "neo4rs",
+ "oxalate_env",
+ "oxalate_init",
+ "oxalate_schemas",
+ "parking_lot 0.12.5",
+ "rdkafka",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tower-http",
+ "url",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "uuid",
+]
+
+[[package]]
+name = "oxalate_parsing"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "exn",
+ "flate2",
+ "itertools 0.14.0",
+ "log",
+ "neo4rs",
+ "oxalate_scraper_controller",
+ "parking_lot 0.12.5",
+ "scraper",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-scoped",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "oxalate_schemas"
 version = "0.1.0"
 dependencies = [
@@ -2441,7 +2499,6 @@ dependencies = [
  "itertools 0.14.0",
  "log",
  "neo4rs",
- "oxalate_utils",
  "parking_lot 0.12.5",
  "scraper",
  "serde",
@@ -2454,10 +2511,6 @@ dependencies = [
  "utoipa",
  "uuid",
 ]
-
-[[package]]
-name = "oxalate_utils"
-version = "0.1.0"
 
 [[package]]
 name = "parking"

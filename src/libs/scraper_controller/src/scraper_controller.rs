@@ -7,16 +7,14 @@ use std::{
     },
 };
 
-use crate::{ProxyId, save_proxy_outputs};
+use crate::ProxyId;
 use async_trait::async_trait;
 use chrono::{Duration, NaiveDateTime, Utc};
 use dashmap::DashMap;
 use enum_dispatch::enum_dispatch;
 use exn::*;
 use log::{debug, info};
-use neo4rs::Graph;
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
 use url::Url;
 use utoipa::ToSchema;
 
@@ -179,12 +177,10 @@ impl ScraperController {
         dead_tasks_proxy_ids.into_boxed_slice()
     }
 
-    pub async fn complete_task<LoggingCTX: Serialize>(
+    pub async fn mark_task_as_complete<LoggingCTX: Serialize>(
         &self,
         proxy_id: &ProxyId,
         proxy_res: &[ProxyRes],
-        db_pool: &Pool<Postgres>,
-        neo4j_pool: &Graph,
         logging_ctx: &LoggingCTX,
     ) -> Result<(), Error> {
         info!(ctx:serde = logging_ctx; "called complete task at scraper controller");
@@ -194,9 +190,10 @@ impl ScraperController {
             return Ok(());
         }
 
-        save_proxy_outputs(proxy_id, proxy_res, db_pool, neo4j_pool, logging_ctx)
-            .await
-            .or_raise(|| Error::FailedToSaveProxyRes)?;
+        // save_proxy_outputs(proxy_id, proxy_res, db_pool, neo4j_pool, logging_ctx)
+        //     .await
+        //     .or_raise(|| Error::FailedToSaveProxyRes)?;
+        todo!();
 
         self.active_tasks.remove(proxy_id);
 

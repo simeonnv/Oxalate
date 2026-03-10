@@ -1,10 +1,9 @@
 [package]
-name = "oxalate_scraper_controller"
+name = "oxalate_parsing"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dashmap = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
 url = { workspace = true }
@@ -13,9 +12,6 @@ tokio = { workspace = true }
 log = { workspace = true }
 uuid = { workspace = true }
 sqlx = { workspace = true }
-serde_json = { workspace = true }
-utoipa = { workspace = true }
-http = { workspace = true }
 tokio-scoped = { workspace = true }
 
 # oxalate_kv_db = { workspace = true }
@@ -25,7 +21,9 @@ parking_lot = { workspace = true }
 
 flate2 = "1.1.5"
 scraper = "0.25.0"
-enum_dispatch = { workspace = true }
 
 neo4rs = { workspace = true }
 itertools = { workspace = true }
+
+serde_json = { workspace = true }
+oxalate_scraper_controller = { workspace = true }
