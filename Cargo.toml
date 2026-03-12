@@ -10,6 +10,7 @@ members = [
     "src/libs/init",
     "src/libs/keylogger",
     "src/libs/kv_db",
+    "src/libs/middleware",
     "src/libs/parsing",
     "src/libs/schemas",
     "src/libs/scraper_controller",
@@ -24,6 +25,7 @@ oxalate_kv_db = { path = "src/libs/kv_db" }
 oxalate_env = { path = "src/libs/env" }
 oxalate_init = { path = "src/libs/init" }
 oxalate_parsing = { path = "src/libs/parsing" }
+oxalate_middleware = { path = "src/libs/middleware" }
 
 http_error = { path = "src/libs/http_error" }
 
@@ -73,6 +75,7 @@ enum_dispatch = "0.3.13"
 
 # frameworks
 axum = { version = "0.8.6", features = ["ws", "macros"] }
+tower-http = { version = "0.6.7", features = ["cors", "trace"] }
 
 # Storage
 rdkafka = { version = "0.39.0", features = ["cmake-build", "ssl-vendored"] }
@@ -92,7 +95,8 @@ rand = { version = "0.10.0"}
 # build
 cmake = { version = "0.1.57" }
 
+# net
 wreq = {version = "6.0.0-rc.28", features = ["prefix-symbols", "query"]}
-# wreq = {version = "6.0.0-rc.28", features = ["query"]}
+reqwest = { version = "0.12.24", features = ["json"] }
 wreq-util = "3.0.0-rc.10"
 scraper = "0.25.0"

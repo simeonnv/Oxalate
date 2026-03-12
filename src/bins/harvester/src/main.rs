@@ -6,8 +6,10 @@ use oxalate_env::load_env_vars;
 use oxalate_init::{init_kafka_producer, init_logger, init_neo4j_pool, init_postgres_pool};
 // use oxalate_env::ENVVARS;
 use oxalate_kv_db::kv_db::KvDb;
+use oxalate_middleware::logging_middleware::logging_middleware;
 use oxalate_scraper_controller::ScraperController;
 use rdkafka::producer::FutureProducer;
+use reqwest::Client;
 use sqlx::{Pool, Postgres};
 use std::{
     net::{IpAddr, SocketAddr},
@@ -18,12 +20,12 @@ use std::{
 use tokio::time::sleep;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tower_http::trace::TraceLayer;
+use url::Url;
 
 mod proxy_connection_store;
 pub use proxy_connection_store::ProxyConnectionStore;
 
 pub mod middleware;
-use middleware::logging_middleware::logging_middleware;
 
 pub mod public_endpoints;
 pub use public_endpoints::public_endpoints;
@@ -51,6 +53,8 @@ pub struct AppState {
     pub proxy_connection_store: Arc<ProxyConnectionStore>,
     pub shutdown: Arc<Shutdown>,
     pub kafka_outlet_producer: Option<FutureProducer>,
+    pub reqwest_client: Client,
+    pub parser_url: Url,
     pub kv_db: KvDb,
     pub env_vars: &'static EnvVars,
 }
@@ -101,6 +105,12 @@ pub struct EnvVars {
     pub neo4j_port: u16,
     #[envconfig(from = "NEO4J_DNS")]
     pub neo4j_dns: String,
+
+    #[envconfig(from = "PARSER_DNS", default = "oxalate-parser")]
+    pub parser_dns: String,
+
+    #[envconfig(from = "PARSER_PORT", default = "11167")]
+    pub parser_port: u16,
 
     // harvester
     // Public Harvester
@@ -163,6 +173,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(load_scraper_controller(&kv_db, SCRAPER_CONTROLLER_KV_KEY).unwrap());
     scraper_controller.enable();
 
+    let reqwest_client = Client::default();
+    let parser_url = Url::parse(&format!(
+        "http://{}:{}/insert_meta_webpage",
+        env_vars.parser_dns, env_vars.parser_port
+    ))
+    .unwrap();
+
+    loop {
+        match reqwest_client.head(parser_url.clone()).send().await {
+            Ok(_) => {
+                log::info!("parser pinged successfully!");
+                break;
+            }
+            Err(err) => {
+                log::error!(
+                    "failed to ping parser at {parser_url} with err: {err}, will retry again, blocking the program till it resolves"
+                );
+                sleep(Duration::from_secs(10)).await;
+                continue;
+            }
+        }
+    }
+
     let app_state = AppState {
         scraper_controller,
         proxy_settings_store: Arc::new(ProxySettingsStore::new(&env_vars.urls_file).unwrap()),
@@ -173,6 +206,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         neo4j_pool,
         db_pool,
         env_vars,
+        reqwest_client,
+        parser_url,
     };
 
     // create the public http server

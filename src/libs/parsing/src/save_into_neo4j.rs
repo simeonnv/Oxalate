@@ -1,8 +1,7 @@
 use exn::{Result, ResultExt};
 use itertools::Itertools;
 use neo4rs::{Graph, query};
-
-use crate::ParsedHtml;
+use url::Url;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -18,12 +17,12 @@ pub enum Error {
 
 pub async fn save_into_neo4j(
     neo4j_pool: &Graph,
-    parsed_html: &ParsedHtml,
-    url: &str,
+    keywords: &[String],
+    url: &Url,
     window_size: usize,
 ) -> Result<(), Error> {
     let mut rel_data = Vec::new();
-    for window in parsed_html.keywords.windows(window_size) {
+    for window in keywords.windows(window_size) {
         for (word_1, word_2) in window.iter().tuple_combinations() {
             let (first, second) = if word_1 < word_2 {
                 (word_1, word_2)
@@ -47,8 +46,8 @@ pub async fn save_into_neo4j(
           ON MATCH SET r.weight = r.weight + 1
         ",
     )
-    .param("url", url)
-    .param("words", parsed_html.keywords.to_owned());
+    .param("url", url.as_str())
+    .param("words", keywords.to_owned());
 
     let rel_query = query(
         "

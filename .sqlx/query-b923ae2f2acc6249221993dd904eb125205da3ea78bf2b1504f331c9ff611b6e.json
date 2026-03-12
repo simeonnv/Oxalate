@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO Webpages\n                (url, compressed_body, keywords, headers, device_machine_id, title)\n            VALUES\n                ($1, $2, $3, $4, $5, $6)\n            ON CONFLICT (url) DO NOTHING;   \n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bytea",
+        "Text",
+        "Jsonb",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b923ae2f2acc6249221993dd904eb125205da3ea78bf2b1504f331c9ff611b6e"
+}

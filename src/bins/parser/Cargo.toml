@@ -36,6 +36,7 @@ log_json_serializer = { workspace = true }
 parking_lot = { workspace = true }
 
 oxalate_env = { workspace = true}
+oxalate_parsing = { workspace = true}
 
 neo4rs = { workspace = true }
 envconfig = { workspace = true }

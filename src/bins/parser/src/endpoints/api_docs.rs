@@ -1,15 +1,15 @@
 use utoipa::OpenApi;
 
 use crate::endpoints::get_ping;
-// use crate::endpoints::post_keyword_graph;
-// use crate::endpoints::post_search;
+use crate::endpoints::post_insert_meta_webpage;
+use crate::endpoints::post_insert_webpage;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
         get_ping::get_ping,
-        // post_search::post_search,
-        // post_keyword_graph::post_keyword_graph
+        post_insert_meta_webpage::post_insert_meta_webpage,
+        post_insert_webpage::post_insert_webpage,
     ),
     tags(),
     security()

@@ -80,7 +80,7 @@ impl fmt::Debug for AppState {
 async fn main() {
     let env_vars: &'static EnvVars = load_env_vars();
 
-    let producer: Option<FutureProducer> = match env_vars.kafka_dns.as_ref() {
+    let kafka_producer_client: Option<FutureProducer> = match env_vars.kafka_dns.as_ref() {
         Some(dns) => {
             let p =
                 init_kafka_producer(dns, env_vars.kafka_port, env_vars.kafka_message_timeout_ms)
@@ -93,7 +93,7 @@ async fn main() {
 
     init_logger(
         env_vars.kafka_parser_logs_topic.to_owned(),
-        producer.to_owned(),
+        kafka_producer_client.to_owned(),
     )
     .await;
 
@@ -116,7 +116,7 @@ async fn main() {
 
     let state = AppState {
         db_pool,
-        kafka_producer_client: producer,
+        kafka_producer_client,
         neo4j_pool,
     };
 

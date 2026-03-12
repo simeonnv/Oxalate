@@ -180,7 +180,7 @@ impl ScraperController {
     pub async fn mark_task_as_complete<LoggingCTX: Serialize>(
         &self,
         proxy_id: &ProxyId,
-        proxy_res: &[ProxyRes],
+        _proxy_res: &[ProxyRes],
         logging_ctx: &LoggingCTX,
     ) -> Result<(), Error> {
         info!(ctx:serde = logging_ctx; "called complete task at scraper controller");
@@ -189,11 +189,6 @@ impl ScraperController {
             info!(ctx:serde = logging_ctx; "A proxy tried to send a task output without having a task assigned");
             return Ok(());
         }
-
-        // save_proxy_outputs(proxy_id, proxy_res, db_pool, neo4j_pool, logging_ctx)
-        //     .await
-        //     .or_raise(|| Error::FailedToSaveProxyRes)?;
-        todo!();
 
         self.active_tasks.remove(proxy_id);
 
