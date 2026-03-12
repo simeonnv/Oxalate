@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{AppState, middleware::logging_middleware::LoggingCTX};
+use crate::AppState;
 use axum::{Extension, Json, debug_handler, extract::State};
+use oxalate_middleware::logging_middleware::LoggingCTX;
 use oxalate_schemas::harvester::private::metric::get_active_tasks::*;
 
 #[utoipa::path(

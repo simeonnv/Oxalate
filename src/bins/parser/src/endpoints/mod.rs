@@ -12,10 +12,16 @@ pub mod api_docs;
 pub mod get_ping;
 use get_ping::get_ping;
 
+pub mod post_insert_meta_webpage;
+use post_insert_meta_webpage::post_insert_meta_webpage;
+
+pub mod post_insert_webpage;
+use post_insert_webpage::post_insert_webpage;
+
 pub fn endpoints(_state: &AppState) -> Router<AppState> {
     Router::new()
         .route("/ping", get(get_ping))
-        // .route("/search", post(post_search))
-        // .route("/keyword_graph", post(post_keyword_graph))
+        .route("/insert_meta_webpage", post(post_insert_meta_webpage))
+        .route("/insert_webpage", post(post_insert_webpage))
         .merge(SwaggerUi::new("/swagger").url("/api-docs/openapi.json", ApiDoc::openapi()))
 }

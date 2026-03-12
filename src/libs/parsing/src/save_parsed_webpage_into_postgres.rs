@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 use chrono::NaiveDateTime;
 use exn::{Result, ResultExt};
@@ -18,7 +18,7 @@ pub enum Error {
     InsertUrls,
 }
 
-pub async fn save_into_postgres(
+pub async fn save_parsed_webpage_into_postgres(
     db_pool: &Pool<Postgres>,
     parsed_html: &ParsedHtml,
     compressed_html: &[u8],
@@ -64,5 +64,5 @@ pub async fn save_into_postgres(
         .or_raise(|| Error::InsertUrls)?;
     }
 
-    todo!()
+    exn::Ok(())
 }

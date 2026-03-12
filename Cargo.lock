@@ -2288,11 +2288,13 @@ dependencies = [
  "oxalate_env",
  "oxalate_init",
  "oxalate_kv_db",
+ "oxalate_middleware",
  "oxalate_schemas",
  "oxalate_scraper_controller",
  "parking_lot 0.12.5",
  "prost",
  "rdkafka",
+ "reqwest",
  "serde",
  "serde_json",
  "sqlx",
@@ -2383,6 +2385,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxalate_middleware"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "exn",
+ "http_error",
+ "log",
+ "oxalate_scraper_controller",
+ "parking_lot 0.12.5",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tower-http",
+ "uuid",
+]
+
+[[package]]
 name = "oxalate_outlet"
 version = "0.1.0"
 dependencies = [
@@ -2433,6 +2452,7 @@ dependencies = [
  "neo4rs",
  "oxalate_env",
  "oxalate_init",
+ "oxalate_parsing",
  "oxalate_schemas",
  "parking_lot 0.12.5",
  "rdkafka",

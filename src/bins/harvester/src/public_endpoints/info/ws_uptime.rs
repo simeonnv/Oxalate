@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{AppState, middleware::logging_middleware::LoggingCTX};
+use crate::AppState;
 use axum::{
     Extension,
     body::Bytes,
@@ -10,6 +10,7 @@ use axum::{
 };
 use exn::ResultExt;
 use http_error::HttpError;
+use oxalate_middleware::logging_middleware::LoggingCTX;
 use oxalate_scraper_controller::ProxyId;
 use tokio::time::sleep;
 

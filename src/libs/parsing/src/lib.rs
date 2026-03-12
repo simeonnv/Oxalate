@@ -5,7 +5,8 @@ pub mod save_into_neo4j;
 
 pub mod compress_html;
 pub mod parse_html;
-pub mod save_into_postgres;
+pub mod save_meta_webpage_into_postgres;
+pub mod save_parsed_webpage_into_postgres;
 pub mod split_into_words;
 
 pub struct ParsedHtml {
