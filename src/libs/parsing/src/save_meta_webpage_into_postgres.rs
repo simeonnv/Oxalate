@@ -14,9 +14,9 @@ pub enum Error {
 pub async fn save_meta_webpage_into_postgres(
     db_pool: &Pool<Postgres>,
     keywords: &[String],
-    title: String,
-    url: Url,
-    search_engine: String,
+    title: &str,
+    url: &Url,
+    search_engine: &str,
 ) -> Result<(), Error> {
     sqlx::query!(
         "

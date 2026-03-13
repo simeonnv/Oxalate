@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{Json, extract::State};
 use exn::ResultExt;
 use http_error::HttpError;
@@ -31,23 +33,25 @@ pub async fn post_insert_meta_webpage(
     State(state): State<AppState>,
     Json(req): Json<Req>,
 ) -> Result<(), HttpError> {
-    let pg_result = save_meta_webpage_into_postgres(
-        &state.db_pool,
-        &req.keywords,
-        req.title,
-        req.url.to_owned(),
-        req.search_engine,
-    )
-    .await;
+    for page in req.pages {
+        let pg_result = save_meta_webpage_into_postgres(
+            &state.db_pool,
+            &page.keywords,
+            &page.title,
+            &page.url,
+            &page.search_engine,
+        )
+        .await;
 
-    let neo4j_result = save_into_neo4j(&state.neo4j_pool, &req.keywords, &req.url, 5).await;
+        let neo4j_result = save_into_neo4j(&state.neo4j_pool, &page.keywords, &page.url, 5).await;
 
-    neo4j_result
-        .or_raise(|| Error::InsertNeo4j)
-        .or_raise(|| HttpError::Internal("".into()))?;
-    pg_result
-        .or_raise(|| Error::InsertPg)
-        .or_raise(|| HttpError::Internal("".into()))?;
+        neo4j_result
+            .or_raise(|| Error::InsertNeo4j)
+            .or_raise(|| HttpError::Internal("".into()))?;
+        pg_result
+            .or_raise(|| Error::InsertPg)
+            .or_raise(|| HttpError::Internal("".into()))?;
+    }
 
     Ok(())
 }

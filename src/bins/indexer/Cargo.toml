@@ -36,3 +36,7 @@ base64 = { version = "0.22.1" }
 envconfig = { workspace = true }
 oxalate_init = { workspace = true }
 oxalate_parsing = { workspace = true }
+reqwest = { workspace = true }
+
+futures = { workspace = true}
+futures-util = { workspace = true}

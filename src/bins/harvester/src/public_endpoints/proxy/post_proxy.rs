@@ -94,7 +94,7 @@ pub async fn post_proxy(
 
             app_state
                 .reqwest_client
-                .post(app_state.parser_url)
+                .post(app_state.parser_url.join("insert_meta_webpage").unwrap())
                 .json(&Req { pages })
                 .send()
                 .await

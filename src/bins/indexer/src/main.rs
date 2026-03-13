@@ -11,7 +11,8 @@ use sqlx::{Pool, Postgres};
 pub mod endpoints;
 pub mod scraping;
 
-use wreq::Client;
+use tokio::time::sleep;
+use url::Url;
 use wreq_util::Emulation;
 
 #[derive(Clone)]
@@ -19,7 +20,10 @@ pub struct AppState {
     pub db_pool: Pool<Postgres>,
     pub neo4j_pool: Graph,
     pub kafka_producer_client: Option<FutureProducer>,
+    pub reqwest_client: reqwest::Client,
     pub wreq_client: wreq::Client,
+    pub parser_url: Url,
+    pub env_vars: &'static EnvVars,
 }
 
 #[derive(Envconfig)]
@@ -60,6 +64,11 @@ pub struct EnvVars {
     pub db_port: u16,
     #[envconfig(from = "POOL_MAX_CONN", default = "25")]
     pub pool_max_conn: u32,
+
+    #[envconfig(from = "PARSER_DNS", default = "oxalate-parser")]
+    pub parser_dns: String,
+    #[envconfig(from = "PARSER_PORT", default = "11167")]
+    pub parser_port: u16,
 
     // Indexer
     #[envconfig(from = "INDEXER_BIND_ADDRESS", default = "0.0.0.0")]
@@ -119,18 +128,43 @@ async fn main() {
     )
     .await;
 
-    let wreq_client = Client::builder()
+    let wreq_client = wreq::Client::builder()
         .local_address(IpAddr::from_str("0.0.0.0").unwrap())
         .emulation(Emulation::Firefox139)
         .timeout(Duration::from_secs(10))
         .build()
         .unwrap();
 
+    let reqwest_client = reqwest::Client::default();
+    let parser_url = Url::parse(&format!(
+        "http://{}:{}",
+        &env_vars.parser_dns, env_vars.parser_port
+    ))
+    .unwrap();
+    loop {
+        match reqwest_client.head(parser_url.as_str()).send().await {
+            Ok(_) => {
+                log::info!("parser pinged successfully!");
+                break;
+            }
+            Err(err) => {
+                log::error!(
+                    "failed to ping parser at {parser_url} with err: {err}, will retry again, blocking the program till it resolves"
+                );
+                sleep(Duration::from_secs(10)).await;
+                continue;
+            }
+        }
+    }
+
     let state = AppState {
         db_pool,
         kafka_producer_client: producer,
         neo4j_pool,
         wreq_client,
+        reqwest_client,
+        env_vars,
+        parser_url,
     };
 
     let app = Router::new()
