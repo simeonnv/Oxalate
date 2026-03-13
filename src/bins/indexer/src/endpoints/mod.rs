@@ -5,7 +5,7 @@ use axum::{
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{AppState, endpoints::app_docs::ApiDoc};
+use crate::{AppState, endpoints::api_docs::ApiDoc};
 
 pub mod get_ping;
 use get_ping::get_ping;
@@ -13,7 +13,7 @@ use get_ping::get_ping;
 pub mod post_search;
 use post_search::post_search;
 
-mod app_docs;
+mod api_docs;
 
 pub mod post_keyword_graph;
 use post_keyword_graph::post_keyword_graph;

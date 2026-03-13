@@ -26,7 +26,6 @@ parking_lot = { workspace = true }
 flate2 = "1.1.5"
 scraper = "0.25.0"
 enum_dispatch = { workspace = true }
-oxalate_utils = { workspace = true }
 
 neo4rs = { workspace = true }
 itertools = { workspace = true }

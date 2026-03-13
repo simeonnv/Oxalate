@@ -1,4 +1,4 @@
-use crate::middleware::logging_middleware::LoggingCTX;
+use crate::AppState;
 use axum::{
     debug_middleware,
     extract::{Request, State},
@@ -8,9 +8,8 @@ use axum::{
 };
 use exn::ResultExt;
 use http_error::HttpError;
+use oxalate_middleware::logging_middleware::LoggingCTX;
 use oxalate_scraper_controller::ProxyId;
-
-use crate::AppState;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -33,7 +32,7 @@ pub async fn proxy_id_middleware(
     let ext = request.extensions_mut();
     ext.insert(proxy_id.to_owned());
     if let Some(e) = ext.get_mut::<LoggingCTX>() {
-        e.with_mutate(|e| e.proxy_id = Some(proxy_id));
+        e.add_extra("proxy_id", proxy_id);
     }
 
     let response = next.run(request).await;

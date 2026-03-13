@@ -1,7 +1,4 @@
-use std::{
-    net::IpAddr,
-    path::{Path, PathBuf},
-};
+use std::path::Path;
 
 use envconfig::Envconfig;
 
@@ -91,7 +88,7 @@ use envconfig::Envconfig;
 //     pub urls_file: PathBuf,
 // }
 
-pub fn load_env_vars<EnvVars: Envconfig>() -> EnvVars {
+pub fn load_env_vars<EnvVars: Envconfig>() -> &'static EnvVars {
     if cfg!(debug_assertions) {
         let dev_env_path = Path::new("./.env.dev");
         if let Err(e) = dotenv::from_path(dev_env_path) {
@@ -105,7 +102,7 @@ pub fn load_env_vars<EnvVars: Envconfig>() -> EnvVars {
 
     let env_vars = EnvVars::init_from_env();
     match env_vars {
-        Ok(e) => e,
+        Ok(e) => Box::leak(Box::new(e)) as &'static EnvVars,
         Err(e) => panic!("failed to load env vars: {}", e),
     }
 }
