@@ -2,7 +2,6 @@ use std::{collections::HashSet, fmt::Display};
 
 use exn::{Result, ResultExt};
 use scraper::{Html, Selector};
-use tokio::task::spawn_blocking;
 use url::Url;
 
 use crate::{ParsedHtml, split_into_words::split_into_words};

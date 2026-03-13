@@ -175,13 +175,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let reqwest_client = Client::default();
     let parser_url = Url::parse(&format!(
-        "http://{}:{}/insert_meta_webpage",
+        "http://{}:{}",
         env_vars.parser_dns, env_vars.parser_port
     ))
     .unwrap();
 
     loop {
-        match reqwest_client.head(parser_url.clone()).send().await {
+        match reqwest_client
+            .head(parser_url.clone().join("insert_meta_webpage").unwrap())
+            .send()
+            .await
+        {
             Ok(_) => {
                 log::info!("parser pinged successfully!");
                 break;
