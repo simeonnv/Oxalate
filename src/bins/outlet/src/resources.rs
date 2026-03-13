@@ -6,10 +6,10 @@ use std::{
 use reqwest::Client;
 use tokio::time::sleep;
 
-use crate::GlobalState;
+use crate::AppState;
 use systemstat::{Platform, System};
 
-pub fn resources(global_state: Arc<GlobalState>, _reqwest_client: Client) {
+pub fn resources(_reqwest_client: Client, global_state: Arc<AppState>) {
     let sys = System::new();
 
     tokio::spawn(async move {

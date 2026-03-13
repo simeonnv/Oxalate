@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO MetaWebpages\n                (url, keywords, title)\n            VALUES\n                ($1, $2, $3)\n            ON CONFLICT (url) DO NOTHING;   \n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2f8e51d3d91f02fba5b5b2aa479f9d8fdaaa4ab61e850408aebcbed10401eb49"
+}

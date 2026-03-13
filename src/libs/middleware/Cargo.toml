@@ -1,0 +1,17 @@
+[package]
+name = "oxalate_middleware"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tower-http = { workspace  = true }
+axum = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+parking_lot = { workspace = true }
+uuid = { workspace = true }
+http_error = { workspace = true }
+log = { workspace = true }
+exn = { workspace = true }
+oxalate_scraper_controller = { workspace = true }
+thiserror = { workspace = true }

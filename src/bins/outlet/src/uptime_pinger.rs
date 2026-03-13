@@ -1,5 +1,6 @@
-use crate::{HARVESTER_URL, MACHINE_ID};
+use crate::AppState;
 use futures::{SinkExt, StreamExt};
+use reqwest::header::HeaderValue;
 use std::time::Duration;
 use tokio::time::sleep;
 use tokio_tungstenite::{
@@ -8,17 +9,23 @@ use tokio_tungstenite::{
 };
 use tokio_util::bytes::Bytes;
 
-pub fn uptime_pinger() {
+pub fn uptime_pinger(global_state: AppState) {
     tokio::spawn(async move {
-        let url = format!("ws://{}/info/uptime", *HARVESTER_URL);
+        let url = format!(
+            "ws://{}:{}/info/uptime",
+            global_state.env_vars.harvester_dns, global_state.env_vars.public_harvester_port
+        );
         let request = Request::builder()
             .uri(&url)
-            .header("Host", *HARVESTER_URL)
+            .header("Host", global_state.env_vars.harvester_dns.to_owned())
             .header("Connection", "Upgrade")
             .header("Upgrade", "websocket")
             .header("Sec-WebSocket-Version", "13")
             .header("Sec-WebSocket-Key", generate_key())
-            .header("machine-id", &*MACHINE_ID)
+            .header(
+                "machine-id",
+                HeaderValue::from_str(global_state.machine_id).unwrap(),
+            )
             .body(())
             .expect("failed to build static uptime pinger request body");
 

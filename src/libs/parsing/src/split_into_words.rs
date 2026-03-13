@@ -1,4 +1,4 @@
-pub fn parse_into_words(raw_text: String) -> Vec<String> {
+pub fn split_into_words(raw_text: &str) -> Vec<String> {
     if raw_text.is_empty() {
         return vec![];
     }

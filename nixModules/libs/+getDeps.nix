@@ -13,7 +13,6 @@
       git
       clang
 
-      direnv
       pkg-config
       nodejs_25
       cmake

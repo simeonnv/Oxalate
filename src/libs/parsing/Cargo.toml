@@ -1,0 +1,29 @@
+[package]
+name = "oxalate_parsing"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = { workspace = true }
+serde = { workspace = true }
+url = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+log = { workspace = true }
+uuid = { workspace = true }
+sqlx = { workspace = true }
+tokio-scoped = { workspace = true }
+
+# oxalate_kv_db = { workspace = true }
+exn = { workspace = true }
+async-trait = { workspace = true }
+parking_lot = { workspace = true }
+
+flate2 = "1.1.5"
+scraper = "0.25.0"
+
+neo4rs = { workspace = true }
+itertools = { workspace = true }
+
+serde_json = { workspace = true }
+oxalate_scraper_controller = { workspace = true }

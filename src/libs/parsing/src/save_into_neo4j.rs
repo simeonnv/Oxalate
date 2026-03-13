@@ -1,21 +1,24 @@
 use exn::{Result, ResultExt};
 use itertools::Itertools;
 use neo4rs::{Graph, query};
+use url::Url;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("failed to start the neo4j transaction")]
     StartTxn,
+
     #[error("failed to run the queries in the neo4j transaction")]
     RunQueries,
+
     #[error("failed to commit the neo4j transaction")]
     Commit,
 }
 
-pub(crate) async fn save_keywords_in_neo4j(
+pub async fn save_into_neo4j(
     neo4j_pool: &Graph,
     keywords: &[String],
-    url: &str,
+    url: &Url,
     window_size: usize,
 ) -> Result<(), Error> {
     let mut rel_data = Vec::new();
@@ -43,8 +46,8 @@ pub(crate) async fn save_keywords_in_neo4j(
           ON MATCH SET r.weight = r.weight + 1
         ",
     )
-    .param("url", url)
-    .param("words", keywords);
+    .param("url", url.as_str())
+    .param("words", keywords.to_owned());
 
     let rel_query = query(
         "

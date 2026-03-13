@@ -1,0 +1,44 @@
+[package]
+name = "oxalate_parser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+
+log = { workspace = true }
+axum = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+sqlx = { workspace = true }
+uuid = { workspace = true }
+http_error = { workspace = true }
+
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+url = { version = "2.5.7", features = ["serde"] }
+
+tokio-util = { version = "0.7.17", features = ["rt"] }
+futures = { workspace = true }
+futures-util = { workspace = true }
+
+oxalate_schemas = { workspace = true }
+oxalate_init = { workspace = true }
+
+tower-http = { version = "0.6.7", features = ["cors", "trace"] }
+exn = { workspace = true }
+rdkafka = { workspace = true }
+fern = { workspace = true }
+
+log_json_serializer = { workspace = true }
+parking_lot = { workspace = true }
+
+oxalate_env = { workspace = true}
+oxalate_parsing = { workspace = true}
+
+neo4rs = { workspace = true }
+envconfig = { workspace = true }
+lazy_static = { workspace = true }
+
