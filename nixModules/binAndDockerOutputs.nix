@@ -26,7 +26,7 @@ in {
       frontend =
         buildNpmApp {
           inherit pkgs lib;
-          depsHash = "sha256-hpvP1Y+EYEurAl4EMerS7tKHsqaHb5r4FKiEiiaTyVs=";
+          depsHash = "sha256-uz323AChaROF9LFREnxHeS697owa/mjSjzroVZ1S47s=";
         } "frontend"
         ./../src/bins/frontend;
     };

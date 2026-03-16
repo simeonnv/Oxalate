@@ -12,6 +12,7 @@ pub mod endpoints;
 pub mod scraping;
 
 use tokio::time::sleep;
+use tower_http::cors::{Any, Cors, CorsLayer};
 use url::Url;
 use wreq_util::Emulation;
 
@@ -166,10 +167,15 @@ async fn main() {
         env_vars,
         parser_url,
     };
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
 
     let app = Router::new()
         .merge(endpoints::endpoints(&state))
-        .with_state(state);
+        .with_state(state)
+        .layer(cors);
 
     let listener = tokio::net::TcpListener::bind(format!(
         "{}:{}",

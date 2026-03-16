@@ -26,3 +26,6 @@ db*
 db/
 .direnv
 secrets.yaml
+*result*
+result
+result*
