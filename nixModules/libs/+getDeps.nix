@@ -64,6 +64,8 @@
       cyrus_sasl
       libclang
       llvm
+      k3d
+      skopeo
     ];
   };
 }

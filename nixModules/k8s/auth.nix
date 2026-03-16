@@ -29,46 +29,15 @@
               ];
               env = [
                 {
-                  name = "RUST_LOG";
-                  value = "info";
+                  name = "EXAMPLE";
+                  value = "VALUE";
                 }
                 {
-                  name = "AUTH_ADDRESS";
-                  value = "0.0.0.0";
-                }
-                {
-                  name = "AUTH_PORT";
-                  value = "8989";
-                }
-                {
-                  name = "POSTGRES_DB";
-                  value = "Oxalate";
-                }
-                {
-                  name = "POSTGRES_USER";
-                  valueFrom.secretKeyRef = {
-                    name = "db-creds";
-                    key = "postgres_user";
-                  };
-                }
-                {
-                  name = "POSTGRES_PASSWORD";
+                  name = "EXAMPLESECRET";
                   valueFrom.secretKeyRef = {
                     name = "db-creds";
                     key = "postgres_password";
                   };
-                }
-                {
-                  name = "DB_DNS";
-                  value = "authpg";
-                }
-                {
-                  name = "DB_PORT";
-                  value = "15432";
-                }
-                {
-                  name = "POOL_MAX_CONN";
-                  value = "5";
                 }
               ];
             };
