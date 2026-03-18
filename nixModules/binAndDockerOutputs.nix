@@ -15,6 +15,7 @@ in {
   }: let
     oxalateApps = {
       harvester = buildRustApp {inherit pkgs lib;} "oxalate_harvester";
+      parser = buildRustApp {inherit pkgs lib;} "oxalate_parser";
       outlet = buildRustApp {inherit pkgs lib;} "oxalate_outlet";
       indexer = buildRustApp {inherit pkgs lib;} "oxalate_indexer";
       admin-ui =
@@ -33,6 +34,7 @@ in {
 
     images = {
       harvester = mkRustDocker pkgs "oxalate-harvester-server" "oxalate_harvester" oxalateApps.harvester ["6767" "6969"];
+      parser = mkRustDocker pkgs "oxalate-parser-server" "oxalate_parser" oxalateApps.parser ["11167"];
       outlet = mkRustDocker pkgs "oxalate-outlet-server" "oxalate_outlet" oxalateApps.outlet [];
       indexer = mkRustDocker pkgs "oxalate-indexer-server" "oxalate_indexer" oxalateApps.indexer ["22267"];
       admin-ui = mkNpmDocker pkgs "oxalate-admin-ui-server" oxalateApps.admin-ui "3000";
@@ -47,17 +49,18 @@ in {
       indexer-app = oxalateApps.indexer;
       admin-ui-app = oxalateApps.admin-ui;
       frontend-app = oxalateApps.frontend;
+      servo-app = servoPkgs.servo-app;
+      auth-app = servoPkgs.auth-app;
+      parser-app = oxalateApps.parser;
 
       harvester-image = images.harvester;
       outlet-image = images.outlet;
       indexer-image = images.indexer;
       admin-ui-image = images.admin-ui;
       frontend-image = images.frontend;
-
-      servo-app = servoPkgs.servo-app;
       servo-image = servoPkgs.servo-image;
-      auth-app = servoPkgs.auth-app;
       auth-image = servoPkgs.auth-image;
+      parser-image = images.parser;
 
       default = oxalateApps.indexer;
     };
@@ -90,6 +93,10 @@ in {
       auth = {
         type = "app";
         program = lib.getExe servoPkgs.auth-app;
+      };
+      parser = {
+        type = "app";
+        program = lib.getExe servoPkgs.parser;
       };
     };
   };

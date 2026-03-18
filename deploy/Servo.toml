@@ -1,22 +1,29 @@
 [config]
-gateway_name = "give me a name vro"
-listens = ["0.0.0.0:54321"]
+gateway_name = "Oxalate"
+listens = ["0.0.0.0:21212"]
 log_level = "INFO"
 
 [[servers]]
-name = "test"
-downstream_hosts = ["someaddress.com", "0.0.0.0:54321"]
+name = "Oxalate"
+downstream_hosts = ["oxalate.ate6.org", "fravs.ate6.org", "0.0.0.0:21212", "127.0.0.1:21212", "192.168.111.11:21212", "0.0.0.0", "127.0.0.1", "192.168.111.11"]
 
-[servers.auth]
-public_pem_http_url = "http://0.0.0.0:25025/public_pem"
-check_duration = 10000
+# [servers.auth]
+# public_pem_http_url = "http://0.0.0.0:25025/public_pem"
+# check_duration = 10000
+# 
+[servers.cache]
+url = "redis://oxalate-dragonfly:6379"
 
+
+
+#indexer
 [[servers.locations]]
 endpoints = ["/", "/{*any}"]
-blacklisted_endpoints = ["/auth/public_pem"]
-max_requests_per_sec = 10
-proxy_passes = ["192.168.1.103:8080"]
-health_check = true
-health_check_frequency = 3000
-requires_jwt = true
-jwt_allowed_roles = ["user"]
+# blacklisted_endpoints = ["/auth/public_pem"]
+max_requests_per_sec = 30
+proxy_passes = ["oxalate-indexer:22267"]
+# health_check = true
+# health_check_frequency = 3000
+cacheable = true
+# requires_jwt = true
+# jwt_allowed_roles = ["user"]
