@@ -98,6 +98,16 @@ services:
       - oxalate-network
     restart: unless-stopped
 
+  oxalate-parser:
+    image: parser-server:latest
+    env_file:
+      - ./.env
+    ports:
+      - "11167:11167"
+    networks:
+      - oxalate-network
+    restart: unless-stopped
+
   oxalate-redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
     command: >
@@ -134,6 +144,12 @@ services:
       - "7474:7474"
     restart: always
 
+  oxalate-dragonfly:
+    image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    ports:
+      - "6379:6379"
+    volumes:
+      - oxalate_dragonfly_data:/data
 
 
 networks:
@@ -145,6 +161,4 @@ volumes:
   oxalate_paradedb_data:
   oxalate_redpanda_data:
   oxalate_neo4j_data:
-# oxalate-harvester-server:latest                    7ba4f1ba23f9        935MB          465MB
-# oxalate-indexer-server:latest                      84252bbc2958        935MB          465MB
-# oxalate-outlet-server:latest                       8ebd162dba3b        935MB          465MB
+  oxalate_dragonfly_data:

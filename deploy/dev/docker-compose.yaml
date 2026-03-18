@@ -53,6 +53,14 @@ services:
     env_file:
       - ../../.env.dev
 
+  oxalate-dragonfly:
+    image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    ports:
+      - "6379:6379"
+    volumes:
+      - oxalate_dragonfly_data:/data
+
+
 networks:
   app-network:
     driver: bridge
@@ -61,4 +69,4 @@ volumes:
   oxalate_paradedb_data:
   oxalate_redpanda_data:
   oxalate_neo4j_data:
-# postgresql://root:root@localhost:6666/Oxalate
+  oxalate_dragonfly_data:
