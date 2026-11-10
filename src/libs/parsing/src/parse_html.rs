@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use std::{collections::HashSet, fmt::Display};
 
 use exn::{Result, ResultExt};

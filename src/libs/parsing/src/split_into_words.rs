@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 pub fn split_into_words(raw_text: &str) -> Vec<String> {
     if raw_text.is_empty() {
         return vec![];

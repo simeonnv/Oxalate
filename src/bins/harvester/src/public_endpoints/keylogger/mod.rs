@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 // mod.rs or lib.rs
 pub mod post_keylogger;
 use axum::Router;

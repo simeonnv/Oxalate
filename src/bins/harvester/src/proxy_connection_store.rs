@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use dashmap::DashMap;
 use oxalate_scraper_controller::ProxyId;
 use tokio::sync::watch::{self, Receiver, Sender};

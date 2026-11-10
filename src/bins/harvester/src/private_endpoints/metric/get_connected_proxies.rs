@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use crate::AppState;
 use axum::{Extension, Json, debug_handler, extract::State};
 use oxalate_middleware::logging_middleware::LoggingCTX;

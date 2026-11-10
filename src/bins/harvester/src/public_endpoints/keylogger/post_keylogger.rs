@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use axum::{Extension, Json, extract::State};
 use oxalate_schemas::harvester::public::keylogger::post_keylogger::*;
 use oxalate_scraper_controller::ProxyId;

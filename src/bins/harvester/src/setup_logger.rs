@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use exn::Exn;
 use kafka_writer_rs::KafkaLogWriter;
 use oxalate_env::ENVVARS;

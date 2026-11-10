@@ -1,3 +1,8 @@
+<!--
+ Copyright 2026 Simeon Vangelov
+ SPDX-License-Identifier: GPL-3.0-only
+-->
+
 <template>
   <div class="drawer lg:drawer-open">
     <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />

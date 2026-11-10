@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use chrono::Utc;
 use log::{error, info};
 use oxalate_keylogger::spawn_keylogger;

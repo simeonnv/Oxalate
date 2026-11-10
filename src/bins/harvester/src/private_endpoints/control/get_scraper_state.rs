@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use axum::{Json, extract::State};
 use oxalate_schemas::harvester::private::control::get_scraper_state::Res;
 

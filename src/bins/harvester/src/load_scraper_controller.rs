@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use exn::{Result, ResultExt};
 use oxalate_kv_db::kv_db::KvDb;
 use oxalate_scraper_controller::ScraperController;

@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use std::{fmt, net::IpAddr, str::FromStr, time::Duration};
 
 use axum::Router;

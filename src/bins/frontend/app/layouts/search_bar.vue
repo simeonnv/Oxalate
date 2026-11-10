@@ -1,3 +1,8 @@
+<!--
+ Copyright 2026 Simeon Vangelov
+ SPDX-License-Identifier: GPL-3.0-only
+-->
+
 <script lang="ts" setup>
 const route = useRoute();
 const router = useRouter();

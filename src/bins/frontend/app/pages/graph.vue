@@ -1,3 +1,8 @@
+<!--
+ Copyright 2026 Simeon Vangelov
+ SPDX-License-Identifier: GPL-3.0-only
+-->
+
 <template>
     <div  v-if="results" ref="containerRef" class="w-full h-full flex flex-row items-center justify-center overflow-hidden">
       <svg ref="svgRef" width="100%" height="100%"></svg>

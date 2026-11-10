@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 // use rdev::{Event, listen};
 use log::{debug, error};
 use rdev::{Key, listen};

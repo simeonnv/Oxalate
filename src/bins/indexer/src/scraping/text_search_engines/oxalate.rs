@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use crate::scraping::{SearchEngine, text_search_engines::TextSearchEngineResult};
 use async_trait::async_trait;
 use exn::{Result, ResultExt};

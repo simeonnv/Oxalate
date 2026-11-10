@@ -1,3 +1,6 @@
+# Copyright 2026 Simeon Vangelov
+# SPDX-License-Identifier: GPL-3.0-only
+
 [package]
 name = "oxalate_schemas"
 version = "0.1.0"

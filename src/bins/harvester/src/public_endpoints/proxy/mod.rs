@@ -1,3 +1,6 @@
+// Copyright 2026 Simeon Vangelov
+// SPDX-License-Identifier: GPL-3.0-only
+
 use axum::{Router, extract::DefaultBodyLimit, middleware::from_fn_with_state, routing::post};
 
 pub mod post_proxy;
